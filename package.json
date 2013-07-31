@@ -1,0 +1,19 @@
+{
+  "name": "workrooms",
+  "version": "0.0.0",
+  "description": "All together now",
+  "scripts": {
+    "test": "npm test",
+    "start": "make watch"
+  },
+  "author": "Will Ballard",
+  "license": "BSD",
+  "dependencies": {
+    "nodemon": "~0.7.8",
+    "less-middleware": "~0.1.12",
+    "enchilada": "~0.4.0",
+    "coffeeify": "~0.5.1",
+    "coffee-script": "~1.6.3",
+    "express": "~3.3.4"
+  }
+}
