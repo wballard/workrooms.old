@@ -14,6 +14,8 @@
     "enchilada": "~0.4.0",
     "coffeeify": "~0.5.1",
     "coffee-script": "~1.6.3",
-    "express": "~3.3.4"
+    "express": "~3.3.4",
+    "attachmediastream": "~1.0.0",
+    "getusermedia": "~0.2.0"
   }
 }

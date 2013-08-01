@@ -1,5 +1,6 @@
 This is the root most controller.
 
     angular.module('workrooms')
-        .controller('Application', [ '$scope', ($scope) ->
+        .controller('Application', [ '$scope', 'conference', ($scope, conference) ->
+            conference.connectLocalMedia()
         ])

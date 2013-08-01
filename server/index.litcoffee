@@ -6,9 +6,17 @@ This is the server starting point. This is a single page app.
 
     express = require('express')
     http = require('http')
+    https = require('https')
+    fs = require('fs')
     path = require('path')
+    crypto = require('crypto')
     less = require('less-middleware')
     enchilada = require('enchilada')
+
+
+    privateKey = fs.readFileSync(path.join(__dirname,'privatekey.pem')).toString()
+    certificate = fs.readFileSync(path.join(__dirname,'certificate.pem')).toString()
+    credentials = crypto.createCredentials({key: privateKey, cert: certificate})
 
     app = express()
     root = path.join(__dirname, '..')
@@ -46,7 +54,14 @@ This is the server starting point. This is a single page app.
     app.use express.static(path.join(root, 'var', 'public'))
 
     httpServer = http.createServer(app)
-
-    console.log "listening #{port}"
     httpServer.listen(port)
+    console.log "http listening #{port}"
+
+    httpsServer = https.createServer(
+        key: privateKey
+        cert: certificate
+    , app)
+    httpsServer.listen(port + 1)
+    console.log "https listening #{port + 1}"
+
 

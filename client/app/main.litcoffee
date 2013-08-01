@@ -17,6 +17,7 @@ Set up routing for the application here.
         ])
 
     require './loading.litcoffee'
+    require './conference.litcoffee'
     require './application.litcoffee'
 
     console.log 'starting'
