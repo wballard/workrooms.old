@@ -16,6 +16,8 @@
     "coffee-script": "~1.6.3",
     "express": "~3.3.4",
     "attachmediastream": "~1.0.0",
-    "getusermedia": "~0.2.0"
+    "getusermedia": "~0.2.0",
+    "getscreenmedia": "~0.2.0",
+    "webrtc": "~0.3.0"
   }
 }

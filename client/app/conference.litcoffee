@@ -2,12 +2,14 @@ Conference service, this hooks up communications channels and media.
 
     getUserMedia = require('getusermedia')
     attachMediaStream = require('attachmediastream')
+    WebRTC = require('webrtc')
 
     angular
         .module('workrooms')
         .service('conference', ->
-            connectLocalMedia: ->
-                getUserMedia(
+            webrtc = new WebRTC(log: true)
+            start: ->
+                webrtc.startLocalMedia(
                     audio: true
                     video:
                         mandatory:
