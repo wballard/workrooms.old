@@ -1,8 +1,9 @@
 console.log('hi');
 path = require('path');
 
-require('../bower_components/angular/angular');
+//angular and jquery, get these up here
 $ = jQuery = require('../bower_components/jquery/jquery');
+require('../bower_components/angular/angular');
 //shim to appease slickgrid that uses old style browser detection
 //this essentially says 'false' to it
 $.browser = {}

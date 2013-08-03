@@ -18,6 +18,7 @@
     "attachmediastream": "~1.0.0",
     "getusermedia": "~0.2.0",
     "getscreenmedia": "~0.2.0",
-    "webrtc": "~0.3.0"
+    "webrtc": "~0.3.0",
+    "chai": "~1.7.2"
   }
 }

@@ -6,7 +6,7 @@ Conference service, this hooks up communications channels and media.
 
     angular
         .module('workrooms')
-        .service('conference', ->
+        .factory('conference', ['$rootScope', ($rootScope) ->
             webrtc = new WebRTC(log: true)
             start: ->
                 webrtc.startLocalMedia(
@@ -18,12 +18,14 @@ Conference service, this hooks up communications channels and media.
                     ,(err, stream) ->
                         if err
                             console.log err
+                            $rootScope.$broadcast('error', err)
                         else
-                            console.log stream
                             attachMediaStream(stream, $('#videoOfMe')[0],
                                 autoplay: true
                                 mirror: true
                                 muted: true
                             )
+                            $rootScope.$broadcast('localMedia')
+                            webrtc.start()
                 )
-        )
+        ])

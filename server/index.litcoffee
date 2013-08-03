@@ -51,6 +51,7 @@ This is the server starting point. This is a single page app.
     app.use '/views', express.static(path.join(root, 'client', 'views'))
     app.use '/images', express.static(path.join(root, 'client', 'images'))
     app.use '/font', express.static(path.join(fontawesomePath, 'font'))
+    app.use '/lib', express.static(path.join(root, 'lib'))
     app.use express.static(path.join(root, 'var', 'public'))
 
     httpServer = http.createServer(app)
