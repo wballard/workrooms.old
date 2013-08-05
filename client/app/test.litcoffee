@@ -6,7 +6,7 @@ self test controller, we'll see how it goes.
     rooms = require('./rooms/index.litcoffee')
 
     angular.module('workrooms')
-      .controller('Test', [ '$scope', ($scope) ->
+      .controller('Test', [ '$scope', '$q', ($scope, $q) ->
         mocha.setup('bdd')
 
         describe "Client", ->
@@ -30,21 +30,29 @@ self test controller, we'll see how it goes.
             clientARoom.join()
             clientBRoom.join()
             setTimeout ->
-              clientARoom.state[clientA.client].should.exist
-              clientARoom.state[clientB.client].should.exist
-              clientBRoom.state[clientA.client].should.exist
-              clientBRoom.state[clientB.client].should.exist
+              clientARoom.state.clients[clientA.client].should.exist
+              clientARoom.state.clients[clientB.client].should.exist
+              clientBRoom.state.clients[clientA.client].should.exist
+              clientBRoom.state.clients[clientB.client].should.exist
               done()
             , 75
 
-          it "should let you join a PeerGroup", (done) ->
-
-          it "should let multiple members in a PeerGroup", (done) ->
-
-        describe "Peer Groups", ->
-          it "should let you send messages to one Peer", (done) ->
-
-          it "should let you send messages to all Peers", (done) ->
+          it "let you set up peer-peer data channels", (done) ->
+            pa = $q.defer()
+            pb = $q.defer()
+            $q.all(pa.promise, pb.promise).then done
+            #here are messages back and forth to one another
+            #each room instance sending its own identity
+            clientARoom.channel('message').send('A')
+            clientBRoom.channel('message').send('B')
+            #and each room instance hearing the other's message over
+            #peer to peer connectivity
+            clientARoom.channel('message').on (message) ->
+              if message is 'B'
+                pa.resolve()
+            clientBRoom.channel('message').on (message) ->
+              if message is 'A'
+                pb.resolve()
 
         mocha.run()
       ])
