@@ -12,6 +12,7 @@ This is the server starting point. This is a single page app.
     crypto = require('crypto')
     less = require('less-middleware')
     enchilada = require('enchilada')
+    sky = require('variablesky')
 
 
     privateKey = fs.readFileSync(path.join(__dirname,'privatekey.pem')).toString()
@@ -54,15 +55,13 @@ This is the server starting point. This is a single page app.
     app.use '/lib', express.static(path.join(root, 'lib'))
     app.use express.static(path.join(root, 'var', 'public'))
 
-    httpServer = http.createServer(app)
-    httpServer.listen(port)
-    console.log "http listening #{port}"
-
     httpsServer = https.createServer(
         key: privateKey
         cert: certificate
     , app)
-    httpsServer.listen(port + 1)
-    console.log "https listening #{port + 1}"
+    httpsServer.listen(port)
+    console.log "https listening #{port}"
 
+    skyServer = new sky.Server(journal: false)
+    skyServer.listen(app, httpsServer)
 
