@@ -43,14 +43,14 @@ self test controller, we'll see how it goes.
             $q.all(pa.promise, pb.promise).then done
             #here are messages back and forth to one another
             #each room instance sending its own identity
-            clientARoom.channel('message').send('A')
-            clientBRoom.channel('message').send('B')
+            clientARoom.send 'topic', 'A'
+            clientBRoom.send 'topic', 'B'
             #and each room instance hearing the other's message over
             #peer to peer connectivity
-            clientARoom.channel('message').on (message) ->
+            clientARoom.on 'topic', (message) ->
               if message is 'B'
                 pa.resolve()
-            clientBRoom.channel('message').on (message) ->
+            clientBRoom.on 'topic', (message) ->
               if message is 'A'
                 pb.resolve()
 

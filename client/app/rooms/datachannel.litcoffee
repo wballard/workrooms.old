@@ -9,10 +9,14 @@ moving bandwidth utilization to the client, away from the server.
     EventEmitter = require('events').EventEmitter
     webrtc = require('./webrtcsupport.js')
     _ = require('lodash')
+    es = require('event-stream')
 
     class DataChannel extends EventEmitter
       constructor: (skyclient, roomLink, peerConfig) ->
         constraints =
+          mandatory:
+            OfferToReceiveAudio: true
+            OfferToReceiveVideo: true
           optional: [
             {RtpDataChannels: true}
           ]
@@ -22,25 +26,50 @@ All important ID, to tell 'this side' of the connection.
         client = skyclient.client
 
         onError = (error) =>
-          console.log error
           @emit 'error', error
 
 Keep a peer connection to every other client in the room.
 
         peerConnections = {}
 
+An event stream pipeline, this allows buffering of send messages until the
+local data channel is connected at all. This stream is lossy in that new data
+connections can and will come on line, messages sent before they come on line
+won't get to them.
+
+        @outbound = es.pipeline(
+          es.map( (object, callback) ->
+            callback(null, JSON.stringify(object))
+          ),
+          es.map( (message, callback) ->
+            for otherClient, connection of peerConnections
+              connection.sendstream.write(message)
+            callback()
+          )
+        )
+        @inbound = es.pipeline(
+          es.map( (message, callback) ->
+            callback(null, JSON.parse(message))
+          ),
+          es.map( (object, callback) ->
+            console.log object, 'a'
+            callback()
+          )
+        )
+
+
 Hooked in to the room link, this is how all the peers are discovered. This kind
 of model converges on connection rather rather than responding to messages. The
 idea is that it will be a bit more reliable in the face of disconnects.
 
-        roomLink.on 'data', (snapshot) ->
+        roomLink.on 'data', (snapshot) =>
           for otherClient, ignore of snapshot?.clients
             if otherClient is client
               #skip yourself
             else
               connection = peerConnections[otherClient]
               if not connection
-                do ->
+                do =>
                   connection = peerConnections[otherClient] = new webrtc.PeerConnection(peerConfig, constraints)
 
 ICE Candidates provide address information for eventual connection.
@@ -53,23 +82,32 @@ so use the identifier as a simple leader election between any two pairs to pick
 the caller.
 
                   connection.onnegotiationneeded = (event) ->
-                    console.log client > otherClient
                     if client > otherClient
                       connection.createOffer( (sessionDescription) ->
                         connection.setLocalDescription sessionDescription, ->
                           skyclient.send(otherClient, 'offer', sessionDescription)
                       , onError, constraints)
 
-Set up the actual data channel.
+Set up the topic 'send' channel.
 
-                  connection.ondatachannel = (event) ->
-                    console.log 'connected'
-                  connection.data = connection.createDataChannel 'peerdata', reliable: false
-                  connection.data.onopen = ->
-                    console.log 'open data'
-                    connection.data.send('hi')
-                  connection.data.onmessage = (event) ->
-                    console.log 'message', event
+                  connection.sendstream = es.pipeline(
+                    connection.sendstreamgate = es.pause(),
+                    es.map( (message, callback) ->
+                      connection.data.send(message)
+                      callback()
+                    )
+                  )
+                  connection.sendstreamgate.pause()
+
+This is the actual data channel.
+
+                  connection.data = connection.createDataChannel 'data', reliable: false
+                  connection.data.onopen = =>
+                    connection.sendstreamgate.resume()
+                  connection.data.onclose = =>
+                    connection.sendstreamgate.pause()
+                  connection.data.onmessage = (event) =>
+                    @inbound.write(event.data)
 
 Respond to negotiation messages.
 
@@ -82,7 +120,6 @@ Respond to negotiation messages.
         skyclient.on 'offer', (sessionDescription, from) ->
           connection = peerConnections[from]
           if connection
-            console.log 'answering'
             connection.setRemoteDescription new webrtc.SessionDescription(sessionDescription), ->
               connection.createAnswer (sessionDescription) ->
                 connection.setLocalDescription sessionDescription, ->
@@ -92,16 +129,11 @@ Respond to negotiation messages.
         skyclient.on 'answer', (sessionDescription, from) ->
           connection = peerConnections[from]
           if connection
-            console.log 'answer', sessionDescription
             connection.setRemoteDescription new webrtc.SessionDescription(sessionDescription), =>
               @emit 'connected', client, from
             , onError
 
-Get a named channel, this allows messages to be subdivided into groups.
-
-        @channel = (name) ->
-          send: ->
-          on: ->
-          off: ->
+      write: (message) ->
+        @outbound.write(message)
 
     module.exports = DataChannel
