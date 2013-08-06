@@ -24,8 +24,9 @@ Link up to the sky, this will keep a local snapshot of the current room state.
         path = "__rooms__.#{name}"
         roomLink = skyclient.link path, (error, snapshot) =>
           for client, ignore of snapshot?.clients
-            if not @clients[client]
+            if not @clients[client] and client isnt skyclient.client
               @clients[client] = true
+              @dataChannel.addPeer(client)
               @emit 'join', client
           for client, ignore of @clients
             if not snapshot[client]
@@ -33,7 +34,7 @@ Link up to the sky, this will keep a local snapshot of the current room state.
 
 Data channel for peer-peer communication.
 
-        @dataChannel = new DataChannel(skyclient, roomLink, options)
+        @dataChannel = new DataChannel(skyclient, options)
         remit = @emit.bind(@)
         @dataChannel.on '*', (event) ->
           console.log this.event, event

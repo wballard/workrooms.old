@@ -12,19 +12,17 @@ moving bandwidth utilization to the client, away from the server.
     es = require('event-stream')
 
     class DataChannel extends EventEmitter
-      constructor: (skyclient, roomLink, options) ->
+      constructor: (@skyclient, @options) ->
         super wildcard: true
 
 All important ID, to tell 'this side' of the connection.
 
-        client = skyclient.client
+        @client = @skyclient.client
 
-        onError = (error) =>
-          @emit 'error', error
 
 Keep a peer connection to every other client in the room.
 
-        peerConnections = {}
+        @peerConnections = {}
 
 An event stream pipeline, this allows buffering of send messages until the
 local data channel is connected at all. This stream is lossy in that new data
@@ -33,11 +31,11 @@ won't get to them. Incoming messages are turned into events, the thought being
 that more folks are used the 'on' style API than streaming.
 
         @outbound = es.pipeline(
-          es.map( (object, callback) ->
+          es.map( (object, callback) =>
             callback(null, JSON.stringify(object))
           ),
-          es.map( (message, callback) ->
-            for otherClient, connection of peerConnections
+          es.map( (message, callback) =>
+            for otherClient, connection of @peerConnections
               connection.sendstream.write(message)
             callback()
           )
@@ -52,83 +50,82 @@ that more folks are used the 'on' style API than streaming.
           )
         )
 
+Respond to negotiation messages.
+
+        @skyclient.on 'ice', (candidate, from) =>
+          connection = @peerConnections[from]
+          if connection
+            if candidate
+              connection.addIceCandidate(new webrtc.IceCandidate(candidate))
+
+        @skyclient.on 'offer', (sessionDescription, from) =>
+          connection = @peerConnections[from]
+          if connection
+            connection.setRemoteDescription new webrtc.SessionDescription(sessionDescription), =>
+              connection.createAnswer (sessionDescription) =>
+                connection.setLocalDescription( sessionDescription,( () =>
+                  @skyclient.send(from, 'answer', sessionDescription)
+                ), @onError)
+
+        @skyclient.on 'answer', (sessionDescription, from) =>
+          connection = @peerConnections[from]
+          if connection
+            connection.setRemoteDescription(new webrtc.SessionDescription(sessionDescription), ( ()=>
+            ), @onError)
+
+      onError: (error) =>
+        console.log error
+        @emit 'error', error
+
+Add a new peer connection to another client.
+
+      addPeer: (otherClient) =>
 
 Hooked in to the room link, this is how all the peers are discovered. This kind
 of model converges on connection rather rather than responding to messages. The
 idea is that it will be a bit more reliable in the face of disconnects.
 
-        roomLink.on 'data', (snapshot) =>
-          for otherClient, ignore of snapshot?.clients
-            if otherClient is client
-              #skip yourself
-            else
-              connection = peerConnections[otherClient]
-              if not connection
-                do =>
-                  connection = peerConnections[otherClient] = new webrtc.PeerConnection(options.peerConfig, options.peerConstraints)
+        connection = @peerConnections[otherClient] =
+          new webrtc.PeerConnection(@options.peerConfig, @options.peerConstraints)
 
 ICE Candidates provide address information for eventual connection.
 
-                  connection.onicecandidate = (event) ->
-                    skyclient.send(otherClient, 'ice', event.candidate)
+        connection.onicecandidate = (event) =>
+          @skyclient.send(otherClient, 'ice', event.candidate)
 
 This is a trick. Connections need to be initiated like a 'caller' and answerer,
 so use the identifier as a simple leader election between any two pairs to pick
 the caller.
 
-                  connection.onnegotiationneeded = (event) ->
-                    if client > otherClient
-                      connection.createOffer( (sessionDescription) ->
-                        connection.setLocalDescription sessionDescription, ->
-                          skyclient.send(otherClient, 'offer', sessionDescription)
-                      , onError, options.peerConstraints)
+        connection.onnegotiationneeded = (event) =>
+          if @client > otherClient
+            connection.createOffer( (sessionDescription) =>
+              connection.setLocalDescription sessionDescription, =>
+                @skyclient.send(otherClient, 'offer', sessionDescription)
+            , @onError, @options.peerConstraints)
 
 Set up the topic 'send' channel. This is initially paused until the connection
 is open so that messages are buffered.
 
-                  connection.sendstream = es.pipeline(
-                    connection.sendstreamgate = es.pause(),
-                    es.map( (message, callback) ->
-                      connection.data.send(message)
-                      callback()
-                    )
-                  )
-                  connection.sendstreamgate.pause()
+        connection.sendstream = es.pipeline(
+          connection.sendstreamgate = es.pause(),
+          es.map( (message, callback) ->
+            connection.data.send(message)
+            callback()
+          )
+        )
+        connection.sendstreamgate.pause()
 
 This is the actual data channel. Incoming messages are routed to a processing
 stream to be turned into events.
 
-                  connection.data = connection.createDataChannel 'data', reliable: false
-                  connection.data.onopen = =>
-                    connection.sendstreamgate.resume()
-                  connection.data.onclose = =>
-                    connection.sendstreamgate.pause()
-                  connection.data.onmessage = (event) =>
-                    @inbound.write(event.data)
-
-Respond to negotiation messages.
-
-        skyclient.on 'ice', (candidate, from) ->
-          connection = peerConnections[from]
-          if connection
-            if candidate
-              connection.addIceCandidate(new webrtc.IceCandidate(candidate))
-
-        skyclient.on 'offer', (sessionDescription, from) ->
-          connection = peerConnections[from]
-          if connection
-            connection.setRemoteDescription new webrtc.SessionDescription(sessionDescription), ->
-              connection.createAnswer (sessionDescription) ->
-                connection.setLocalDescription sessionDescription, ->
-                  skyclient.send(from, 'answer', sessionDescription)
-                , onError
-
-        skyclient.on 'answer', (sessionDescription, from) ->
-          connection = peerConnections[from]
-          if connection
-            connection.setRemoteDescription new webrtc.SessionDescription(sessionDescription), =>
-              @emit 'connected', client, from
-            , onError
+        connection.data = connection.createDataChannel('data', reliable: false)
+        connection.data.onopen = =>
+          connection.sendstreamgate.resume()
+        connection.data.onclose = =>
+          connection.sendstreamgate.pause()
+        connection.data.onmessage = (event) =>
+          @inbound.write(event.data)
 
       write: (message) ->
         @outbound.write(message)
