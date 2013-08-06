@@ -10,6 +10,7 @@ springs into existence if needed.
 
     class Room extends EventEmitter
       constructor: (skyclient, name, iceServers) ->
+        skyclient.traceOn()
         peerConfig =
           iceServers: iceServers or DEFAULT_ICE_SERVERS
 
@@ -19,15 +20,14 @@ Link up to the sky, this will keep a local snapshot of the current room state.
         roomLink = skyclient.link path, (error, snapshot) =>
           @state = snapshot
 
+Data channel for sending messages.
+
+        dataChannel = new DataChannel(skyclient, roomLink, peerConfig)
+        @channel = dataChannel.channel
+
 Link to our own client in the sky room, this is to update our own state.
 
         clientLink = skyclient.link "#{path}.clients.#{skyclient.client}"
-
-Data channel for sending messages.
-
-        dataChannel = new DataChannel(roomLink, clientLink, peerConfig)
-        @channel = dataChannel.channel
-
         @join = ->
           if clientLink.val
             clientLink.val.joined = true
