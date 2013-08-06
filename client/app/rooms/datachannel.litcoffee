@@ -53,16 +53,12 @@ so use the identifier as a simple leader election between any two pairs to pick
 the caller.
 
                   connection.onnegotiationneeded = (event) ->
+                    console.log client > otherClient
                     if client > otherClient
                       connection.createOffer( (sessionDescription) ->
                         connection.setLocalDescription sessionDescription, ->
                           skyclient.send(otherClient, 'offer', sessionDescription)
                       , onError, constraints)
-
-                  connection.oniceconnectionstatechange =  ->
-                    console.log 'ICE', connection
-                  connection.ondatachannel = ->
-                    console.log 'DATA', connection
 
 Set up the actual data channel.
 
@@ -70,7 +66,10 @@ Set up the actual data channel.
                     console.log 'connected'
                   connection.data = connection.createDataChannel 'peerdata', reliable: false
                   connection.data.onopen = ->
-                    console.log 'open data', connection
+                    console.log 'open data'
+                    connection.data.send('hi')
+                  connection.data.onmessage = (event) ->
+                    console.log 'message', event
 
 Respond to negotiation messages.
 
