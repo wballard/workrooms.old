@@ -9,6 +9,7 @@ moving bandwidth utilization to the client, away from the server.
 
     EventEmitter = require('events').EventEmitter
     webrtc = require('./webrtcsupport.js')
+    _ = require('lodash')
 
     class DataChannel extends EventEmitter
 
@@ -22,76 +23,93 @@ moving bandwidth utilization to the client, away from the server.
             {RtpDataChannels: true}
           ]
 
-Hooked in to this client.
-
-        clientData = {}
-        clientLink.on 'data', (snapshot) ->
-          clientData = snapshot or {}
-
 Hooked in to the room link, this is how all the peers are discovered. This kind
 of model converges on connection rather rather than responding to messages. The
 idea is that it will be a bit more reliable in the face of disconnects.
 
         peerChannels = {}
         roomLink.on 'data', (snapshot) ->
+
+          console.log snapshot
+          clientData = clientLink.val or {}
           clientData.answers = clientData.answers or {}
           clientData.offers = clientData.offers or {}
           clientData.iceCandidates = clientData.iceCandidates or {}
+
+All important ID, to tell 'this side' of the connection.
+
+          client = clientLink.connection.client
+
           for otherClient, otherClientData of snapshot?.clients
-            if otherClient is clientLink.connection.client
-              #skip yourself
-            else
+            do ->
+              if otherClient is client
+                #skip yourself
 
 This is the most important case, set up a peer connection for each other
 client, think of this as a peer matrix. The interesting bit here is capturing
 all the ICE candidates to be shared with the peer.
 
-              channel = peerChannels[otherClient]
-              if not channel
-                channel = peerChannels[otherClient] = new webrtc.PeerConnection(peerConfig, constraints)
-                channel.onicecandidate = (event) ->
-                  candidates = clientData.iceCandidates[otherClient] or []
-                  if event.candidate
-                    candidates.push(event.candidate)
-                  clientData.iceCandidates[otherClient] = candidates
-                  clientLink.save(clientData)
-                channel.ondatachannel = (event) ->
-                  console.log 'connected'
-                channel.data = channel.createDataChannel 'data', reliable: false
-                channel.createOffer ( (sessionDescription) =>
-                  clientData.offers[otherClient] = sessionDescription
-                  clientLink.save(clientData)
-                ), ( (error) =>
-                  console.log error
-                  @emit 'error', error
-                ), constraints
-
-After initial starting a peer channel, look to complete offer/answer pairs. This
-negotiation terminates when the remote description is an answer, indicating both
-sides have exchanged offer/answer pairs.
-
-              offerToMe = otherClientData?.offers?[clientLink.connection.client]
-              answerToMe = otherClientData?.answers?[clientLink.connection.client]
-              if offerToMe and not channel.remoteDescription
-                channel.setRemoteDescription new webrtc.SessionDescription(offerToMe), ->
-                  channel.createAnswer ( (sessionDescription) =>
-                    clientData.answers[otherClient] = sessionDescription
-                    channel.setLocalDescription sessionDescription, ->
+              else
+                channel = peerChannels[otherClient]
+                if not channel
+                  channel = peerChannels[otherClient] = new webrtc.PeerConnection(peerConfig, constraints)
+                  channel.onicecandidate = (event) ->
+                    candidates = clientData.iceCandidates[otherClient] or []
+                    if event.candidate
+                      candidates.push(event.candidate)
+                      clientData.iceCandidates[otherClient] = candidates
                       clientLink.save(clientData)
-                  ), ( (error) =>
-                    console.log error
-                    @emit 'error', error
-                  ), constraints
-              if answerToMe and not channel?.remoteDescription?.type is 'answer'
-                channel.setRemoteDescription new webrtc.SessionDescription(answerToMe), =>
-                  @emit 'connected', clientLink.connection.client, otherClient
+                  channel.oniceconnectionstatechange = (event) ->
+                    console.log 'ICE', event
+                  channel.onopen = (event) ->
+                    console.log 'OPEN', event
+
+Set up the actual data channel.
+
+                  channel.ondatachannel = (event) ->
+                    console.log 'connected'
+                  channel.data = channel.createDataChannel 'peerdata', reliable: false
+
+Start the negotiation sequence here when asked by the peer connection. This
+uses variable sky to transmit all the SDP data.
+
+                  channel.onnegotiationneeded = (event) ->
+                    console.log 'NEGOTITATE'
+                    channel.createOffer ( (sessionDescription) =>
+                      clientData.offers[otherClient] = sessionDescription
+                      clientLink.save(clientData)
+                    ), ( (error) =>
+                      @emit 'error', error
+                    ), constraints
+
+Look to complete offer/answer pairs. This negotiation terminates when the
+remote description is an answer, indicating both sides have exchanged
+offer/answer pairs.
+
+                offerToMe = otherClientData?.offers?[client]
+                answerToMe = otherClientData?.answers?[client]
+                if offerToMe and not channel.remoteDescription
+                  console.log 'answering'
+                  channel.setRemoteDescription new webrtc.SessionDescription(offerToMe), ->
+                    channel.createAnswer ( (sessionDescription) ->
+                      console.log 'answer'
+                      clientData.answers[otherClient] = sessionDescription
+                      channel.setLocalDescription sessionDescription, ->
+                        clientLink.save(clientData)
+                    ), ( (error) =>
+                      console.log error
+                      @emit 'error', error
+                    ), constraints
+                if answerToMe and not channel?.remoteDescription?.type is 'answer'
+                  console.log 'complete'
+                  channel.setRemoteDescription new webrtc.SessionDescription(answerToMe), =>
+                    @emit 'connected', clientLink.connection.client, otherClient
 
 And the all important ICE candidates from the peer, this actually connects us.
 
-              for iceCandidate in (otherClientData?.iceCandidates?[clientLink.connection.client] or [])
-                console.log 'go', iceCandidate
-
-        pc = new webrtc.PeerConnection(peerConfig, constraints)
+                for iceCandidate in (otherClientData?.iceCandidates?[client] or [])
+                  console.log 'Adding ICE'
+                  channel.addIceCandidate new webrtc.IceCandidate(iceCandidate)
 
 Get a named channel, this allows messages to be subdivided into groups.
 
