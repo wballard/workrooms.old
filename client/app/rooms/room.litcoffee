@@ -10,7 +10,6 @@ springs into existence if needed.
 
     class Room extends EventEmitter
       constructor: (skyclient, name, iceServers) ->
-        skyclient.traceOn()
         peerConfig =
           iceServers: iceServers or DEFAULT_ICE_SERVERS
 

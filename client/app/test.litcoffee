@@ -17,7 +17,6 @@ self test controller, we'll see how it goes.
           clientA = clientB = clientARoom = clientBRoom = null
           before (done) ->
             clientA = variablesky.connect()
-            clientA.starter = true
             clientB = variablesky.connect()
             roomName = Date.now()
             clientARoom = new rooms.Room(clientA, roomName)

@@ -1,6 +1,5 @@
-This sets up peer to peer data channels for the exchange of simple messages.
-A peer data channel is set up with each other client joined to the room, so
-message flows are from the client.
+This sets up peer to peer data channels, forming a logical NxN matrix of
+connections between all peers.
 
 In comparison to a central hub, reaching all clients is simply N - 1 messages,
 whereas with a central hub, there are N messages as the client must send to
@@ -35,7 +34,6 @@ of model converges on connection rather rather than responding to messages. The
 idea is that it will be a bit more reliable in the face of disconnects.
 
         roomLink.on 'data', (snapshot) ->
-
           for otherClient, ignore of snapshot?.clients
             if otherClient is client
               #skip yourself
@@ -45,14 +43,17 @@ idea is that it will be a bit more reliable in the face of disconnects.
                 do ->
                   connection = peerConnections[otherClient] = new webrtc.PeerConnection(peerConfig, constraints)
 
-Handle the webrtc events, this controls the lifecycle of establishing a
-connection.
+ICE Candidates provide address information for eventual connection.
 
                   connection.onicecandidate = (event) ->
                     skyclient.send(otherClient, 'ice', event.candidate)
 
+This is a trick. Connections need to be initiated like a 'caller' and answerer,
+so use the identifier as a simple leader election between any two pairs to pick
+the caller.
+
                   connection.onnegotiationneeded = (event) ->
-                    if skyclient.starter
+                    if client > otherClient
                       connection.createOffer( (sessionDescription) ->
                         connection.setLocalDescription sessionDescription, ->
                           skyclient.send(otherClient, 'offer', sessionDescription)
@@ -78,8 +79,6 @@ Respond to negotiation messages.
           if connection
             if candidate
               connection.addIceCandidate(new webrtc.IceCandidate(candidate))
-            else
-              console.log 'ice complete', connection
 
         skyclient.on 'offer', (sessionDescription, from) ->
           connection = peerConnections[from]
