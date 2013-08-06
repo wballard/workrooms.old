@@ -24,35 +24,43 @@ self test controller, we'll see how it goes.
             done()
 
           after (done) ->
-            client.close done
+            clientA.close ->
+              clientB.close done
 
           it "let you quickly join", (done) ->
+            #using angular q, note the $apply
+            ajoin = $q.defer()
+            bjoin = $q.defer()
+            clientARoom.on 'join', (client) ->
+              if client is clientB.client
+                ajoin.resolve()
+                $scope.$apply()
+            clientBRoom.on 'join', (client) ->
+              if client is clientA.client
+                bjoin.resolve()
+                $scope.$apply()
+            $q.all([ajoin.promise, bjoin.promise]).then -> done()
             clientARoom.join()
             clientBRoom.join()
-            setTimeout ->
-              clientARoom.state.clients[clientA.client].should.exist
-              clientARoom.state.clients[clientB.client].should.exist
-              clientBRoom.state.clients[clientA.client].should.exist
-              clientBRoom.state.clients[clientB.client].should.exist
-              done()
-            , 75
 
           it "let you set up peer-peer data channels", (done) ->
             pa = $q.defer()
             pb = $q.defer()
-            $q.all(pa.promise, pb.promise).then done
-            #here are messages back and forth to one another
-            #each room instance sending its own identity
-            clientARoom.send 'topic', 'A'
-            clientBRoom.send 'topic', 'B'
+            $q.all(pa.promise, pb.promise).then -> done()
             #and each room instance hearing the other's message over
             #peer to peer connectivity
             clientARoom.on 'topic', (message) ->
               if message is 'B'
                 pa.resolve()
+                $scope.$apply()
             clientBRoom.on 'topic', (message) ->
               if message is 'A'
                 pb.resolve()
+                $scope.$apply()
+            #here are messages back and forth to one another
+            #each room instance sending its own identity
+            clientARoom.send 'topic', 'A'
+            clientBRoom.send 'topic', 'B'
 
         mocha.run()
       ])

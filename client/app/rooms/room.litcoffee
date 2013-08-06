@@ -1,7 +1,7 @@
 This is the main entry point, you create a room in VariableSky, which just
 springs into existence if needed.
 
-    EventEmitter = require('events').EventEmitter
+    EventEmitter = require('eventemitter2').EventEmitter2
     DataChannel = require('./datachannel.litcoffee')
 
     DEFAULT_ICE_SERVERS = [
@@ -15,15 +15,27 @@ springs into existence if needed.
 
 Link up to the sky, this will keep a local snapshot of the current room state.
 
+        @clients = {}
         path = "__rooms__.#{name}"
         roomLink = skyclient.link path, (error, snapshot) =>
-          @state = snapshot
+          for client, ignore of snapshot?.clients
+            if not @clients[client]
+              @clients[client] = true
+              @emit 'join', client
+          for client, ignore of @clients
+            if not snapshot[client]
+              @emit 'leave', client
 
-Data channel for sending messages.
+Data channel for peer-peer communication.
 
         @dataChannel = new DataChannel(skyclient, roomLink, peerConfig)
+        remit = @emit.bind(@)
+        @dataChannel.on '*', (event) ->
+          console.log this.event, event
+          remit this.event, event
 
-Link to our own client in the sky room, this is to update our own state.
+Link to our own client in the sky room, this is to update our own state as a
+member in the room.
 
         @clientLink = skyclient.link "#{path}.clients.#{skyclient.client}"
 

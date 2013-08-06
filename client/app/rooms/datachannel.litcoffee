@@ -6,13 +6,14 @@ whereas with a central hub, there are N messages as the client must send to
 the central server before it relays to all clients. This has the effect of
 moving bandwidth utilization to the client, away from the server.
 
-    EventEmitter = require('events').EventEmitter
+    EventEmitter = require('eventemitter2').EventEmitter2
     webrtc = require('./webrtcsupport.js')
     _ = require('lodash')
     es = require('event-stream')
 
     class DataChannel extends EventEmitter
       constructor: (skyclient, roomLink, peerConfig) ->
+        super wildcard: true
         constraints =
           mandatory:
             OfferToReceiveAudio: true
@@ -35,7 +36,8 @@ Keep a peer connection to every other client in the room.
 An event stream pipeline, this allows buffering of send messages until the
 local data channel is connected at all. This stream is lossy in that new data
 connections can and will come on line, messages sent before they come on line
-won't get to them.
+won't get to them. Incoming messages are turned into events, the thought being
+that more folks are used the 'on' style API than streaming.
 
         @outbound = es.pipeline(
           es.map( (object, callback) ->
@@ -48,11 +50,11 @@ won't get to them.
           )
         )
         @inbound = es.pipeline(
-          es.map( (message, callback) ->
+          es.map( (message, callback) =>
             callback(null, JSON.parse(message))
           ),
-          es.map( (object, callback) ->
-            console.log object, 'a'
+          es.map( (object, callback) =>
+            @emit object.topic, object.message
             callback()
           )
         )
@@ -88,7 +90,8 @@ the caller.
                           skyclient.send(otherClient, 'offer', sessionDescription)
                       , onError, constraints)
 
-Set up the topic 'send' channel.
+Set up the topic 'send' channel. This is initially paused until the connection
+is open so that messages are buffered.
 
                   connection.sendstream = es.pipeline(
                     connection.sendstreamgate = es.pause(),
@@ -99,7 +102,8 @@ Set up the topic 'send' channel.
                   )
                   connection.sendstreamgate.pause()
 
-This is the actual data channel.
+This is the actual data channel. Incoming messages are routed to a processing
+stream to be turned into events.
 
                   connection.data = connection.createDataChannel 'data', reliable: false
                   connection.data.onopen = =>
