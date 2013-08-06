@@ -21,13 +21,6 @@ self test controller, we'll see how it goes.
             roomName = Date.now()
             clientARoom = new rooms.Room(clientA, roomName)
             clientBRoom = new rooms.Room(clientB, roomName)
-            done()
-
-          after (done) ->
-            clientA.close ->
-              clientB.close done
-
-          it "let you quickly join", (done) ->
             #using angular q, note the $apply
             ajoin = $q.defer()
             bjoin = $q.defer()
@@ -42,6 +35,10 @@ self test controller, we'll see how it goes.
             $q.all([ajoin.promise, bjoin.promise]).then -> done()
             clientARoom.join()
             clientBRoom.join()
+
+          after (done) ->
+            clientA.close ->
+              clientB.close done
 
           it "let you set up peer-peer data channels", (done) ->
             pa = $q.defer()

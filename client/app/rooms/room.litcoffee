@@ -3,15 +3,20 @@ springs into existence if needed.
 
     EventEmitter = require('eventemitter2').EventEmitter2
     DataChannel = require('./datachannel.litcoffee')
+    _ = require('lodash')
 
-    DEFAULT_ICE_SERVERS = [
-      {url: "stun:stun.l.google.com:19302"}
-    ]
+    DEFAULT_OPTIONS =
+      peerConfig:
+        iceServers: [ {url: "stun:stun.l.google.com:19302"} ]
+      peerConstraints:
+        mandatory:
+          OfferToReceiveAudio: true
+          OfferToReceiveVideo: true
+        optional: [ {RtpDataChannels: true} ]
 
     class Room extends EventEmitter
-      constructor: (skyclient, name, iceServers) ->
-        peerConfig =
-          iceServers: iceServers or DEFAULT_ICE_SERVERS
+      constructor: (skyclient, name, options) ->
+        options = _.extend({}, DEFAULT_OPTIONS, options)
 
 Link up to the sky, this will keep a local snapshot of the current room state.
 
@@ -28,7 +33,7 @@ Link up to the sky, this will keep a local snapshot of the current room state.
 
 Data channel for peer-peer communication.
 
-        @dataChannel = new DataChannel(skyclient, roomLink, peerConfig)
+        @dataChannel = new DataChannel(skyclient, roomLink, options)
         remit = @emit.bind(@)
         @dataChannel.on '*', (event) ->
           console.log this.event, event

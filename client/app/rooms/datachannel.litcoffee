@@ -12,15 +12,8 @@ moving bandwidth utilization to the client, away from the server.
     es = require('event-stream')
 
     class DataChannel extends EventEmitter
-      constructor: (skyclient, roomLink, peerConfig) ->
+      constructor: (skyclient, roomLink, options) ->
         super wildcard: true
-        constraints =
-          mandatory:
-            OfferToReceiveAudio: true
-            OfferToReceiveVideo: true
-          optional: [
-            {RtpDataChannels: true}
-          ]
 
 All important ID, to tell 'this side' of the connection.
 
@@ -72,7 +65,7 @@ idea is that it will be a bit more reliable in the face of disconnects.
               connection = peerConnections[otherClient]
               if not connection
                 do =>
-                  connection = peerConnections[otherClient] = new webrtc.PeerConnection(peerConfig, constraints)
+                  connection = peerConnections[otherClient] = new webrtc.PeerConnection(options.peerConfig, options.peerConstraints)
 
 ICE Candidates provide address information for eventual connection.
 
@@ -88,7 +81,7 @@ the caller.
                       connection.createOffer( (sessionDescription) ->
                         connection.setLocalDescription sessionDescription, ->
                           skyclient.send(otherClient, 'offer', sessionDescription)
-                      , onError, constraints)
+                      , onError, options.peerConstraints)
 
 Set up the topic 'send' channel. This is initially paused until the connection
 is open so that messages are buffered.
