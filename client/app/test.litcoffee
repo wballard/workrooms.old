@@ -4,6 +4,7 @@ self test controller, we'll see how it goes.
 
     require('chai').should()
     rooms = require('./rooms/index.litcoffee')
+    attachMediaStream = require('attachmediastream')
 
     angular.module('workrooms')
       .controller('Test', [ '$scope', '$q', ($scope, $q) ->
@@ -32,7 +33,15 @@ self test controller, we'll see how it goes.
               if client is clientA.client
                 bjoin.resolve()
                 $scope.$apply()
-            $q.all([ajoin.promise, bjoin.promise]).then -> done()
+            avideo = $q.defer()
+            bvideo = $q.defer()
+            clientARoom.on 'localvideo', ->
+              avideo.resolve()
+              $scope.$apply()
+            clientBRoom.on 'localvideo', ->
+              bvideo.resolve()
+              $scope.$apply()
+            $q.all([ajoin.promise, bjoin.promise, avideo.promise, bvideo.promise]).then -> done()
             clientARoom.join()
             clientBRoom.join()
 
@@ -40,7 +49,7 @@ self test controller, we'll see how it goes.
             clientA.close ->
               clientB.close done
 
-          it "let you set up peer-peer data channels", (done) ->
+          it "lets you set up peer-peer data channels", (done) ->
             pa = $q.defer()
             pb = $q.defer()
             $q.all(pa.promise, pb.promise).then -> done()
@@ -58,6 +67,13 @@ self test controller, we'll see how it goes.
             #each room instance sending its own identity
             clientARoom.send 'topic', 'A'
             clientBRoom.send 'topic', 'B'
+
+          it 'shows videos from the local side of peer connections', (done) ->
+            attachMediaStream clientARoom.localVideoStream, document.getElementById('peerA'), {autoplay: true, muted: true}
+            attachMediaStream clientBRoom.localVideoStream, document.getElementById('peerB'), {autoplay: true, muted: true}
+            attachMediaStream clientARoom.remoteVideoStreams[0], document.getElementById('peerARemote'), {autoplay: true, muted: true}
+            attachMediaStream clientBRoom.remoteVideoStreams[0], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
+            done()
 
         mocha.run()
       ])

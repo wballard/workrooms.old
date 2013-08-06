@@ -13,6 +13,12 @@ springs into existence if needed.
           OfferToReceiveAudio: true
           OfferToReceiveVideo: true
         optional: [ {RtpDataChannels: true} ]
+      mediaConstraints:
+        audio: true
+        video:
+            mandatory:
+                maxWidth: 320
+                maxHeight: 240
 
     class Room extends EventEmitter
       constructor: (skyclient, name, options) ->
@@ -35,7 +41,12 @@ Link up to the sky, this will keep a local snapshot of the current room state.
 Data channel for peer-peer communication.
 
         @dataChannel = new DataChannel(skyclient, options)
+        @remoteVideoStreams = []
         remit = @emit.bind(@)
+        @dataChannel.on 'localvideo', (stream) =>
+          @localVideoStream = stream
+        @dataChannel.on 'remotevideo', (stream) =>
+          @remoteVideoStreams.push(stream)
         @dataChannel.on '*', (event) ->
           console.log this.event, event
           remit this.event, event

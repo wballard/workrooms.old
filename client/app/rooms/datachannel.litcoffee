@@ -10,6 +10,7 @@ moving bandwidth utilization to the client, away from the server.
     webrtc = require('./webrtcsupport.js')
     _ = require('lodash')
     es = require('event-stream')
+    getUserMedia = require('getusermedia')
 
     class DataChannel extends EventEmitter
       constructor: (@skyclient, @options) ->
@@ -18,7 +19,6 @@ moving bandwidth utilization to the client, away from the server.
 All important ID, to tell 'this side' of the connection.
 
         @client = @skyclient.client
-
 
 Keep a peer connection to every other client in the room.
 
@@ -73,6 +73,8 @@ Respond to negotiation messages.
             connection.setRemoteDescription(new webrtc.SessionDescription(sessionDescription), ( ()=>
             ), @onError)
 
+Error handling, this is here to emit and log for the time being.
+
       onError: (error) =>
         console.log error
         @emit 'error', error
@@ -88,24 +90,20 @@ idea is that it will be a bit more reliable in the face of disconnects.
         connection = @peerConnections[otherClient] =
           new webrtc.PeerConnection(@options.peerConfig, @options.peerConstraints)
 
-ICE Candidates provide address information for eventual connection.
+This is the actual data channel. Incoming messages are routed to a processing
+stream to be turned into events as they are received.
 
-        connection.onicecandidate = (event) =>
-          @skyclient.send(otherClient, 'ice', event.candidate)
+        connection.data = connection.createDataChannel('data', reliable: false)
+        connection.data.onopen = =>
+          connection.sendstreamgate.resume()
+        connection.data.onclose = =>
+          connection.sendstreamgate.pause()
+        connection.data.onmessage = (event) =>
+          @inbound.write(event.data)
 
-This is a trick. Connections need to be initiated like a 'caller' and answerer,
-so use the identifier as a simple leader election between any two pairs to pick
-the caller.
-
-        connection.onnegotiationneeded = (event) =>
-          if @client > otherClient
-            connection.createOffer( (sessionDescription) =>
-              connection.setLocalDescription sessionDescription, =>
-                @skyclient.send(otherClient, 'offer', sessionDescription)
-            , @onError, @options.peerConstraints)
-
-Set up the topic 'send' channel. This is initially paused until the connection
-is open so that messages are buffered.
+Set up the topic 'send' stream that goes over the data channel. This is
+initially paused until the connection is open so that messages are buffered per
+peer.
 
         connection.sendstream = es.pipeline(
           connection.sendstreamgate = es.pause(),
@@ -116,16 +114,40 @@ is open so that messages are buffered.
         )
         connection.sendstreamgate.pause()
 
-This is the actual data channel. Incoming messages are routed to a processing
-stream to be turned into events.
+Set up a conference audio/video stream.
 
-        connection.data = connection.createDataChannel('data', reliable: false)
-        connection.data.onopen = =>
-          connection.sendstreamgate.resume()
-        connection.data.onclose = =>
-          connection.sendstreamgate.pause()
-        connection.data.onmessage = (event) =>
-          @inbound.write(event.data)
+        getUserMedia @options.mediaConstraints, (error, stream) =>
+          if error
+            @onError(error)
+          else
+            @emit 'localvideo', stream
+            connection.addStream(stream)
+
+This is a trick. Connections need to be initiated like a 'caller' and answerer,
+so use the identifier as a simple leader election between any two pairs to pick
+the caller.
+
+            if @client > otherClient
+              console.log 'negotiate!'
+              connection.createOffer( (sessionDescription) =>
+                connection.setLocalDescription sessionDescription, =>
+                  @skyclient.send(otherClient, 'offer', sessionDescription)
+              , @onError, @options.peerConstraints)
+
+Listen for remote media streams.
+
+        connection.onaddstream = (event) =>
+          @emit 'remotevideo', event.stream
+
+ICE Candidates provide address information for eventual connection.
+
+        connection.onicecandidate = (event) =>
+          @skyclient.send(otherClient, 'ice', event.candidate)
+
+
+
+Write a general purpose message to this stream in {topic:, message:} format. This
+will be delivered to all connected peers.
 
       write: (message) ->
         @outbound.write(message)
