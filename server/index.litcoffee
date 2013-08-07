@@ -62,6 +62,6 @@ This is the server starting point. This is a single page app.
     httpsServer.listen(port)
     console.log "https listening #{port}"
 
-    skyServer = new sky.Server(journal: false)
+    skyServer = new sky.Server(journal: false).traceOn()
     skyServer.listen(app, httpsServer)
 

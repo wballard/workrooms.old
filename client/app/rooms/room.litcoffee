@@ -22,6 +22,7 @@ springs into existence if needed.
 
     class Room extends EventEmitter
       constructor: (skyclient, name, options) ->
+        @name = name
         options = _.extend({}, DEFAULT_OPTIONS, options)
 
 Link up to the sky, this will keep a local snapshot of the current room state.
@@ -45,10 +46,11 @@ Data channel for peer-peer communication.
         remit = @emit.bind(@)
         @dataChannel.on 'localvideo', (stream) =>
           @localVideoStream = stream
+          @emit 'localvideo', stream
         @dataChannel.on 'remotevideo', (stream) =>
           @remoteVideoStreams.push(stream)
+          @emit 'remotevideo', stream
         @dataChannel.on '*', (event) ->
-          console.log this.event, event
           remit this.event, event
 
 Link to our own client in the sky room, this is to update our own state as a
@@ -59,21 +61,24 @@ member in the room.
 Join this client to a room, which updates the state on the server to let all
 room members know we are here.
 
-      join: ->
+      join: =>
+        console.log 'joining', @name
         if @clientLink.val
           @clientLink.val.joined = true
           @clientLink.save @clientLink.val
         else
           @clientLink.save joined: true
+        @
 
 Messages to all other connected clients in the room. This is a simple topic
 and message setup, where messages are strings and the message will be transported
 over JSON. This just delegates to the DataChannel.
 
-      send: (topic, message) ->
+      send: (topic, message) =>
         @dataChannel.write(
           topic: topic
           message: message
         )
+        @
 
     module.exports = Room

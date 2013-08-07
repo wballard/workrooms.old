@@ -142,9 +142,8 @@ Listen for remote media streams.
 ICE Candidates provide address information for eventual connection.
 
         connection.onicecandidate = (event) =>
-          @skyclient.send(otherClient, 'ice', event.candidate)
-
-
+          if event.candidate
+            @skyclient.send(otherClient, 'ice', event.candidate)
 
 Write a general purpose message to this stream in {topic:, message:} format. This
 will be delivered to all connected peers.

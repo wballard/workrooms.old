@@ -7,6 +7,7 @@ Set up routing for the application here.
     angular
         .module('workrooms', ['gadgets'])
         .run(['$rootScope', '$location', ($rootScope, $location) ->
+          console.log 'application running'
         ])
         .config(['$routeProvider', ($routeProvider) ->
             $routeProvider
@@ -15,16 +16,19 @@ Set up routing for the application here.
                     templateUrl: '/views/welcome.html'
                 )
                 .when(
+                    '/rooms/:roomid'
+                    templateUrl: '/views/room.html'
+                )
+                .when(
                     '/test'
                     templateUrl: '/views/test/index.html'
                 )
         ])
 
     require './loading.litcoffee'
-    require './conference.litcoffee'
+    require './video.litcoffee'
+    require './room.litcoffee'
     require './application.litcoffee'
     require './welcome.litcoffee'
     require './test.litcoffee'
-
-    console.log 'starting'
 
