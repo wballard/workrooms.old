@@ -2,17 +2,30 @@
 @import 'font-awesome';
 @import 'lib/mocha.css';
 
+@video-size: 96px;
+@video-indent: -12px;
+
 
 .video-avatar {
-  width: 64px;
-  height: 64px;
+  width: @video-size;
+  height: @video-size;
+  position: relative;
   video {
-    width: 64px;
-    height: 64px;
+    position: relative;
+    width: @video-size;
+    height: @video-size;
     -webkit-mask-image: url('images/avatar-mask.svg');
+    z-index: 10;
+  }
+  .background {
+    position: absolute;
+    width: @video-size;
+    height: @video-size;
+    background-image: url('images/avatar-edge.svg');
+    z-index: 11;
   }
   list-style: none;
-  margin-left: -12px;
+  margin-left: @video-indent;
 }
 
 li.video-avatar {
