@@ -9,6 +9,7 @@ This is the really simple case of just hooking a stream on to an
       .directive('attachStream', [ ->
         restrict: 'A'
         link: ($scope, element, attrs) ->
+          $(element).wrap("<div class='background'/>")
           $scope.$watch attrs.attachStream, (stream) ->
             console.log stream, element
             if stream

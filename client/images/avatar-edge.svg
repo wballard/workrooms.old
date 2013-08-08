@@ -2,8 +2,8 @@
 <defs>
 <radialGradient id="blackedge" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
 <stop offset="95%" style="stop-color:rgb(255,255,255);stop-opacity:0"></stop>
-<stop offset="100%" style="stop-color:rgb(32,32,32);stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:rgb(96,96,96);stop-opacity:0.9"></stop>
 </radialGradient>
 </defs>
-<circle cx="50%" cy="50%" r="34.5%" fill="url(#blackedge)"></circle>
+<circle cx="50%" cy="50%" r="35%" fill="url(#blackedge)"></circle>
 </svg>

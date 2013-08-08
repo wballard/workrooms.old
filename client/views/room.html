@@ -1,11 +1,9 @@
 <div ng-controller="Room">
   <ul>
     <li class="video-avatar">
-    <span class="background"></span>
     <video class="" preload="none" muted attach-stream="room.localVideoStream"></video>
     </li>
     <li ng-repeat="videoStream in room.remoteVideoStreams" class="video-avatar">
-    <span class="background"></span>
     <video class="" preload="none" attach-stream="videoStream"></video>
     </li>
   </ul>

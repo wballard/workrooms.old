@@ -23,17 +23,20 @@ springs into existence if needed.
     class Room extends EventEmitter
       constructor: (skyclient, name, options) ->
         @name = name
+        @client = skyclient.client
         options = _.extend({}, DEFAULT_OPTIONS, options)
 
 Link up to the sky, this will keep a local snapshot of the current room state.
+As new clients come in, this state is used to fire off `join` and `leave`
+messages, which at the bare minimum are useful for testing.
 
         @clients = {}
         path = "__rooms__.#{name}"
         roomLink = skyclient.link path, (error, snapshot) =>
           for client, ignore of snapshot?.clients
-            if not @clients[client] and client isnt skyclient.client
+            if not @clients[client] and client isnt @client
               @clients[client] = true
-              @dataChannel.addPeer(client)
+              @dataChannel.write addPeer: client
               @emit 'join', client
           for client, ignore of @clients
             if not snapshot[client]
@@ -56,7 +59,7 @@ Data channel for peer-peer communication.
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.
 
-        @clientLink = skyclient.link "#{path}.clients.#{skyclient.client}"
+        @clientLink = skyclient.link "#{path}.clients.#{@client}"
 
 Join this client to a room, which updates the state on the server to let all
 room members know we are here.
