@@ -3,7 +3,7 @@ a bit of a new technique for me at the time of this writing to have a
 self test controller, we'll see how it goes.
 
     require('chai').should()
-    rooms = require('./rooms/index.litcoffee')
+    room = require('./rooms/room.litcoffee')
     attachMediaStream = require('attachmediastream')
 
     angular.module('workrooms')
@@ -20,8 +20,8 @@ self test controller, we'll see how it goes.
             clientA = variablesky.connect()
             clientB = variablesky.connect()
             roomName = Date.now()
-            clientARoom = new rooms.Room(clientA, roomName)
-            clientBRoom = new rooms.Room(clientB, roomName)
+            clientARoom = room(clientA, roomName)
+            clientBRoom = room(clientB, roomName)
             #using angular q, note the $apply
             ajoin = $q.defer()
             bjoin = $q.defer()
@@ -63,8 +63,12 @@ self test controller, we'll see how it goes.
                 $scope.$apply()
             #here are messages back and forth to one another
             #each room instance sending its own identity
-            clientARoom.send 'topic', 'A'
-            clientBRoom.send 'topic', 'B'
+            clientARoom.write
+              topic: 'topic'
+              message: 'A'
+            clientBRoom.write
+              topic: 'topic'
+              message: 'B'
 
           it 'shows videos from the local side of peer connections', (done) ->
             attachMediaStream clientARoom.localVideoStream, document.getElementById('peerA'), {autoplay: true, muted: true}

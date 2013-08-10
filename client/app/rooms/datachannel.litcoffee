@@ -149,6 +149,6 @@ channel which itself is _streamy_.
           stream.write localvideo: video
           gate.resume()
 
-      stream
+      _.extend stream, options
 
     module.exports = datachannel
