@@ -2,8 +2,10 @@ This is the main entry point, you create a room in VariableSky, which just
 springs into existence if needed.
 
     EventEmitter = require('eventemitter2').EventEmitter2
-    DataChannel = require('./datachannel.litcoffee')
+    datachannel = require('./datachannel.litcoffee')
     _ = require('lodash')
+    es = require('event-stream')
+    tap = require('tap-stream')
 
     DEFAULT_OPTIONS =
       peerConfig:
@@ -42,19 +44,47 @@ messages, which at the bare minimum are useful for testing.
             if not snapshot[client]
               @emit 'leave', client
 
+
+        @localVideoStream = null
+        @remoteVideoStreams = {}
+
 Data channel for peer-peer communication.
 
-        @dataChannel = new DataChannel(skyclient, options)
-        @remoteVideoStreams = []
-        remit = @emit.bind(@)
-        @dataChannel.on 'localvideo', (stream) =>
-          @localVideoStream = stream
-          @emit 'localvideo', stream
-        @dataChannel.on 'remotevideo', (stream) =>
-          @remoteVideoStreams.push(stream)
-          @emit 'remotevideo', stream
-        @dataChannel.on '*', (event) ->
-          remit this.event, event
+        options.client = skyclient.client
+        @dataChannel = datachannel(options)
+        @dataChannel.pipe(
+          es.pipeline(
+            #tap(0),
+            es.mapSync( (data) =>
+              if data.localvideo
+                @localVideoStream = data.localvideo
+                @emit 'localvideo', data.localvideo
+              else
+                data
+            ),
+            es.mapSync( (data) =>
+              if data.remotevideo
+                @remoteVideoStreams[data.remotevideo.client] = data.remotevideo
+                @emit 'remotevideo', data.remotevideo
+              else
+                data
+            ),
+            es.mapSync( (data) =>
+              if data.emit
+                @emit data.topic, data.message
+                undefined
+              else
+                data
+            ),
+            es.mapSync( (message, callback) ->
+              if message.to
+                skyclient.send(message.to, 'signaling', message)
+              undefined
+            )
+          )
+        )
+        skyclient.on 'signaling', (message) =>
+          @dataChannel.write(message)
 
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.
