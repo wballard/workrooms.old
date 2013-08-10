@@ -30,10 +30,10 @@ data.
         @name = name
         @client = skyclient.client
         options = _.extend({}, DEFAULT_OPTIONS, options)
+        options.client = options.client or skyclient.client
 
 Data channel for peer-peer communication.
 
-        options.client = skyclient.client
         @dataChannel = dataChannel = datachannel(options)
         dataChannel.pipe(
           es.pipeline(
@@ -93,17 +93,11 @@ member in the room.
 
         @clientLink = skyclient.link "#{path}.clients.#{@client}"
 
-Join this client to a room, which updates the state on the server to let all
-room members know we are here.
-
-      join: =>
-        console.log 'joining', @name
         if @clientLink.val
           @clientLink.val.joined = true
           @clientLink.save @clientLink.val
         else
           @clientLink.save joined: true
-        @
 
 Messages to all other connected clients in the room. This is a simple topic
 and message setup, where messages are strings and the message will be transported

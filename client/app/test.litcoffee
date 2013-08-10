@@ -42,8 +42,6 @@ self test controller, we'll see how it goes.
               bvideo.resolve()
               $scope.$apply()
             $q.all([ajoin.promise, bjoin.promise, avideo.promise, bvideo.promise]).then -> done()
-            clientARoom.join()
-            clientBRoom.join()
 
           after (done) ->
             clientA.close ->
