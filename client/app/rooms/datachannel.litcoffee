@@ -73,9 +73,8 @@ An event stream pipeline, this allows buffering of messages until the channel
 has the local stream callbacks, particularly for video. Chose this technique
 over promises out of pure fascination with substack's code.
 
-        outboundGate = es.pause()
         @outbound = es.pipeline(
-          outboundGate,
+          outboundGate = es.pause().pause(),
           es.map( (object, callback) =>
             if object.addPeer
               addAPeer(object.addPeer)
@@ -83,23 +82,17 @@ over promises out of pure fascination with substack's code.
             else
               callback(null, object)
           ),
-          es.map( (object, callback) =>
-            callback(null, JSON.stringify(object))
-          ),
+          es.stringify(),
           es.map( (message, callback) =>
             for otherClient, connection of @peerConnections
               connection.sendstream.write(message)
             callback()
           )
         )
-        outboundGate.pause()
         @inbound = es.pipeline(
-          es.map( (message, callback) =>
-            callback(null, JSON.parse(message))
-          ),
-          es.map( (object, callback) =>
+          es.parse(),
+          es.mapSync( (object) =>
             @emit object.topic, object.message
-            callback()
           )
         )
 
