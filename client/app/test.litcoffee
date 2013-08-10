@@ -71,8 +71,8 @@ self test controller, we'll see how it goes.
           it 'shows videos from the local side of peer connections', (done) ->
             attachMediaStream clientARoom.localVideoStream, document.getElementById('peerA'), {autoplay: true, muted: true}
             attachMediaStream clientBRoom.localVideoStream, document.getElementById('peerB'), {autoplay: true, muted: true}
-            attachMediaStream clientARoom.remoteVideoStreams[0], document.getElementById('peerARemote'), {autoplay: true, muted: true}
-            attachMediaStream clientBRoom.remoteVideoStreams[0], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
+            attachMediaStream clientARoom.remoteVideoStreams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
+            attachMediaStream clientBRoom.remoteVideoStreams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
             done()
 
         mocha.run()

@@ -1,11 +1,14 @@
 This is the main entry point, you create a room in VariableSky, which just
-springs into existence if needed.
+springs into existence if needed. Rooms track all the attached clients.
 
     EventEmitter = require('eventemitter2').EventEmitter2
     datachannel = require('./datachannel.litcoffee')
     _ = require('lodash')
     es = require('event-stream')
     tap = require('tap-stream')
+
+So... many... settings... WebRTC defaults here to get audio, video, and
+data.
 
     DEFAULT_OPTIONS =
       peerConfig:
@@ -28,31 +31,11 @@ springs into existence if needed.
         @client = skyclient.client
         options = _.extend({}, DEFAULT_OPTIONS, options)
 
-Link up to the sky, this will keep a local snapshot of the current room state.
-As new clients come in, this state is used to fire off `join` and `leave`
-messages, which at the bare minimum are useful for testing.
-
-        @clients = {}
-        path = "__rooms__.#{name}"
-        roomLink = skyclient.link path, (error, snapshot) =>
-          for client, ignore of snapshot?.clients
-            if not @clients[client] and client isnt @client
-              @clients[client] = true
-              @dataChannel.write addPeer: client
-              @emit 'join', client
-          for client, ignore of @clients
-            if not snapshot[client]
-              @emit 'leave', client
-
-
-        @localVideoStream = null
-        @remoteVideoStreams = {}
-
 Data channel for peer-peer communication.
 
         options.client = skyclient.client
-        @dataChannel = datachannel(options)
-        @dataChannel.pipe(
+        @dataChannel = dataChannel = datachannel(options)
+        dataChannel.pipe(
           es.pipeline(
             #tap(0),
             es.mapSync( (data) =>
@@ -83,8 +66,27 @@ Data channel for peer-peer communication.
             )
           )
         )
-        skyclient.on 'signaling', (message) =>
-          @dataChannel.write(message)
+        skyclient.on 'signaling', (message) ->
+          dataChannel.write(message)
+
+Link up to the sky, this will keep a local snapshot of the current room state.
+As new clients come in, this state is used to fire off `join` and `leave`
+messages, which at the bare minimum are useful for testing.
+
+        @clients = {}
+        path = "__rooms__.#{name}"
+        roomLink = skyclient.link path, (error, snapshot) =>
+          for client, ignore of snapshot?.clients
+            if not @clients[client] and client isnt @client
+              @clients[client] = true
+              dataChannel.write addPeer: client
+              @emit 'join', client
+          for client, ignore of @clients
+            if not snapshot[client]
+              @emit 'leave', client
+
+        @localVideoStream = null
+        @remoteVideoStreams = {}
 
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.

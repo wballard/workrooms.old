@@ -52,18 +52,15 @@ sent to all attached peers.
             connection.dataSubstream = es.pipeline(
               connection.gate = es.pause().pause(),
               es.mapSync (message) ->
-                console.log 'through', message
                 connection.data.send message
                 undefined
             )
             connection.data.onopen = ->
-              console.log 'data open'
               connection.gate.resume()
             connection.data.onclose = -> connection.dataSubstream.end()
             connection.data.onmessage = (event) ->
               message = JSON.parse(event.data)
               message.emit = true
-              console.log 'messagy', message
               stream.write message
             connection.onaddstream = (event) ->
               event.stream.client = otherClient
