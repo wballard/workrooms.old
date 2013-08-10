@@ -6,7 +6,6 @@ Control a single Room, including video and chat, running peer to peer.
       .module('workrooms')
       .controller('Room', ['$scope', '$routeParams', ($scope, $routeParams) ->
         $scope.room = room($scope.sky, $routeParams.roomid)
-          .join()
           .on('localvideo', ->
             console.log 'loco'
             $scope.$apply())

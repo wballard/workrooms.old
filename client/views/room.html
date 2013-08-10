@@ -3,7 +3,7 @@
     <li class="video-avatar">
     <video class="" preload="none" muted attach-stream="room.localVideoStream"></video>
     </li>
-    <li ng-repeat="videoStream in room.remoteVideoStreams" class="video-avatar">
+    <li ng-repeat="(client, videoStream) in room.remoteVideoStreams" class="video-avatar">
     <video class="" preload="none" attach-stream="videoStream"></video>
     </li>
   </ul>
