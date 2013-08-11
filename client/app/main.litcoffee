@@ -32,3 +32,5 @@ Set up routing for the application here.
     require './welcome.litcoffee'
     require './test.litcoffee'
 
+    window.HACK = true
+

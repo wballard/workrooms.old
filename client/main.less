@@ -9,9 +9,10 @@
 .video-avatar {
   width: @video-size;
   height: @video-size;
-  position: relative;
   video {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: @video-size;
     height: @video-size;
     -webkit-mask-image: url('images/avatar-mask.svg');
@@ -24,12 +25,43 @@
     background-image: url('images/avatar-edge.svg');
     z-index: 11;
   }
-  list-style: none;
+  .user-icon {
+    .icon-FontAwesome();
+    font-size: 3.0em;
+    position: relative;
+    top: 50%;
+    &:before {
+      position: relative;
+      margin-top: -25%;
+      line-height: normal;
+      display: block;
+      content: @user;
+      color: @gray-light;
+    }
+  }
   margin-left: @video-indent;
 }
 
-li.video-avatar {
-  float: left;
+.video-avatars {
+  overflow: hidden;
+  ul {
+    clear:left;
+    float:left;
+    list-style:none;
+    margin:0;
+    padding:0;
+    position:relative;
+    left:50%;
+    text-align:center;
+  }
+  li {
+    display:block;
+    float:left;
+    list-style:none;
+    padding:0;
+    position:relative;
+    right:50%;
+  }
 }
 
 .mainview {
@@ -40,3 +72,4 @@ li.video-avatar {
 html, body {
   height: 100%;
 }
+

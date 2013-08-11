@@ -54,6 +54,11 @@ The room itself is a stream pipeline of command handling.
         es.mapSync( (data) =>
           if data.localvideo
             dataChannel.localVideoStream = data.localvideo
+            #hack for testing visually
+            if HACK
+              remoteVideoStreams[data.localvideo.client] = data.localvideo
+              dataChannel.remoteVideoStreams = remoteVideoStreams
+            #end hack
             emit 'localvideo', data.localvideo
           else
             data

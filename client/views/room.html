@@ -1,10 +1,12 @@
 <div ng-controller="Room">
-  <ul>
-    <li class="video-avatar">
-    <video class="" preload="none" muted attach-stream="room.localVideoStream"></video>
-    </li>
-    <li ng-repeat="(client, videoStream) in room.remoteVideoStreams" class="video-avatar">
-    <video class="" preload="none" attach-stream="videoStream"></video>
-    </li>
-  </ul>
+  <div class="video-avatars">
+    <ul>
+      <li class="video-avatar">
+      <video class="" preload="none" muted attach-stream="room.localVideoStream"></video>
+      </li>
+      <li ng-repeat="(client, videoStream) in room.remoteVideoStreams" class="video-avatar">
+      <video class="" preload="none" attach-stream="videoStream"></video>
+      </li>
+    </ul>
+  </div>
 </div>

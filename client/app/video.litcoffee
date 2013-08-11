@@ -9,9 +9,10 @@ This is the really simple case of just hooking a stream on to an
       .directive('attachStream', [ ->
         restrict: 'A'
         link: ($scope, element, attrs) ->
-          $(element).wrap("<div class='background'/>")
+          $(element)
+            .wrap("<div class='background'></div>")
+            .before("<div class='user-icon'></div>")
           $scope.$watch attrs.attachStream, (stream) ->
-            console.log stream, element
             if stream
               attachMediaStream(stream, element[0])
             else
