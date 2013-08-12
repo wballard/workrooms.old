@@ -69,8 +69,7 @@ Shim in an output stream with gain control. Can you hear me now?
 These are ex-recto.
 
               interval = 100
-              maxThreshold = -60
-              meanThreshold = -97.5
+              meanThreshold = 18
 
 Start up the monitoring loop.
 
@@ -80,9 +79,8 @@ Start up the monitoring loop.
                     audioAnalyser.getFloatFrequencyData(fftBins)
                     valid = _.select(fftBins, (x) -> x < 0)
                     maxVolume = _.max(valid)
-                    meanVolume = _.reduce(valid, (sum, x) -> sum + x) / valid.length
-                    console.log maxVolume, meanVolume
-                    if maxVolume > maxThreshold
+                    meanVolume = _.reduce(valid, (sum, x) -> sum + x) / fftBins.length
+                    if Math.abs(maxVolume - meanVolume) < meanThreshold
                       $scope.$emit('start.speaking') if not speaking
                       gainFilter.gain.value = 1.0 if gainFilter
                       speaking = true
