@@ -31,6 +31,17 @@
     background-image: url('images/avatar-highlight.svg');
     z-index: 12;
   }
+  .muted {
+    .icon-FontAwesome();
+    position: absolute;
+    right: 10%;
+    bottom: 10%;
+    z-index: 13;
+    &:before {
+      color: @gray-light;
+      content: @microphone-off;
+    }
+  }
   .background {
     position: absolute;
     width: @video-size;
@@ -108,11 +119,11 @@
 
 .overlay {
   text-shadow: 0 2px 0 @body-bg, 0 -2px 0 @body-bg;
-  -webkit-transform: rotate(10deg);
-  -moz-transform: rotate(10deg);
-  -ms-transform: rotate(10deg);
-  -o-transform: rotate(10deg);
-  transform: rotate(10deg);
+  -webkit-transform: rotate(15deg);
+  -moz-transform: rotate(15deg);
+  -ms-transform: rotate(15deg);
+  -o-transform: rotate(15deg);
+  transform: rotate(15deg);
   filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
   &:before {
     content: "/"

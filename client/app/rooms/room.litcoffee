@@ -133,7 +133,6 @@ Angular like this.
         if localVideoStream
           allStreams[options.client] = localVideoStream
         allStreams = _.extend(allStreams, remoteVideoStreams)
-        console.log roomData, allStreams
         for client, metadata of roomData?.clients
           if stream = allStreams[client]
             stream.muteAudio = metadata.muteAudio or false

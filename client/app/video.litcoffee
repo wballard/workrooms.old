@@ -22,8 +22,10 @@ hidden/enabled based on detecting speaking.
           $(element)
             .wrap("<div class='background'></div>")
             .before("<div class='highlight'></div>")
+            .before("<div class='muted'></div>")
             .before("<div class='user-icon'></div>")
           $highlight = $(element).parent().find('.highlight')
+          $muted = $(element).parent().find('.muted')
 
           $highlight.hide()
 
@@ -93,11 +95,15 @@ Start up the monitoring loop.
 Visual feedback.
 
               $scope.$watch "#{attrs.attachStream}.muteVideo", (muted) ->
-                console.log 'watchy', arguments
                 if muted
                   element.addClass 'muteVideo'
                 else
                   element.removeClass 'muteVideo'
+              $scope.$watch "#{attrs.attachStream}.muteAudio", (muted) ->
+                if muted
+                  $muted.show()
+                else
+                  $muted.hide()
 
 And an unhook.
 
