@@ -20,7 +20,7 @@ The basics, video tile wrapped with a background and highlight, which is
 hidden/enabled based on detecting speaking.
 
           $(element)
-            .wrap("<div class='background'></div>")
+            .before("<div class='background'></div>")
             .before("<div class='highlight'></div>")
             .before("<div class='muted'></div>")
             .before("<div class='user-icon'></div>")
@@ -68,8 +68,8 @@ Shim in an output stream with gain control. Can you hear me now?
 These are ex-recto.
 
               interval = 100
-              maxThreshold = -65
-              meanThreshold = -97
+              maxThreshold = -60
+              meanThreshold = -97.5
 
 Start up the monitoring loop.
 
@@ -80,7 +80,7 @@ Start up the monitoring loop.
                     valid = _.select(fftBins, (x) -> x < 0)
                     maxVolume = _.max(valid)
                     meanVolume = _.reduce(valid, (sum, x) -> sum + x) / valid.length
-                    if maxVolume > maxThreshold and meanVolume > meanThreshold
+                    if maxVolume > maxThreshold
                       $scope.$emit('start.speaking') if not speaking
                       gainFilter.gain.value = 1.0 if gainFilter
                       speaking = true

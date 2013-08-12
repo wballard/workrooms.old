@@ -15,4 +15,6 @@ Control a single Room, including video and chat, running peer to peer.
           .on('synch', ->
             $scope.$apply())
         $scope.sky.linkToAngular $scope.room.clientLinkPath, $scope, 'me'
+        $scope.$on 'start.speaking', ->
+          console.log 'hiii'
       ])

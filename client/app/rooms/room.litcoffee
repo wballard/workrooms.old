@@ -122,11 +122,12 @@ messages, which at the bare minimum are useful for testing.
             emit 'join', client
         for client, ignore of clients
           if not snapshot[client]
+            delete remoteVideoStreams[client]
             emit 'leave', client
         synchMetadata()
 
 Metadata, moved on to the video streams themselves. A bit easier to use with
-Angular like this.
+Angular like this, allowing the video stream itself to be put into scopes.
 
       synchMetadata =  ->
         allStreams = {}

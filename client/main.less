@@ -2,7 +2,7 @@
 @import 'font-awesome';
 @import 'lib/mocha.css';
 
-@video-size: 96px;
+@video-size: 196px;
 @video-indent: -12px;
 
 .test-videos {
@@ -44,14 +44,16 @@
   }
   .background {
     position: absolute;
+    top: 0;
+    left: 0;
     width: @video-size;
     height: @video-size;
     background-image: url('images/avatar-edge.svg');
-    z-index: 11;
   }
   .user-icon {
     .icon-FontAwesome();
-    font-size: 3.0em;
+    font-size: @video-size/2;
+    line-height: @video-size;
     position: relative;
     top: 50%;
     &:before {

@@ -63,6 +63,7 @@ sent to all attached peers.
               message = JSON.parse(event.data)
               message.emit = true
               stream.write message
+            #lots of callbacks on rtc peers, turns out only two are really useful...
             connection.onaddstream = (event) ->
               event.stream.client = otherClient
               stream.emit 'data',  remotevideo: event.stream
