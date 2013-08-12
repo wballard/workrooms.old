@@ -96,3 +96,55 @@ And an unhook.
             else
               element[0].src = ""
       ])
+      .directive('muteAudioStream', [ ->
+        restrict: 'A'
+        link: ($scope, element, attrs) ->
+          template = """
+            <span class="icon-stack">
+              <i class="icon-microphone"></i>
+              <i class="icon-stack-base overlay"></i>
+            </span>
+            """
+          $off = $(element).append(template).find('.overlay')
+          monitoringStream = null
+          showState = ->
+            if monitoringStream
+              if _.any(monitoringStream.getAudioTracks(), (x) -> x.enabled)
+                $off.hide()
+              else
+                $off.show()
+          $(element).on 'click', ->
+            if monitoringStream
+              _.each monitoringStream.getAudioTracks(), (x) ->
+                x.enabled = $off.is(':visible')
+              showState()
+          $scope.$watch attrs.muteAudioStream, (stream) ->
+            monitoringStream = stream
+            showState()
+      ])
+      .directive('muteVideoStream', [ ->
+        restrict: 'A'
+        link: ($scope, element, attrs) ->
+          template = """
+            <span class="icon-stack">
+              <i class="icon-facetime-video"></i>
+              <i class="icon-stack-base overlay"></i>
+            </span>
+            """
+          $off = $(element).append(template).find('.overlay')
+          monitoringStream = null
+          showState = ->
+            if monitoringStream
+              if _.any(monitoringStream.getVideoTracks(), (x) -> x.enabled)
+                $off.hide()
+              else
+                $off.show()
+          $(element).on 'click', ->
+            if monitoringStream
+              _.each monitoringStream.getVideoTracks(), (x) ->
+                x.enabled = $off.is(':visible')
+              showState()
+          $scope.$watch attrs.muteVideoStream, (stream) ->
+            monitoringStream = stream
+            showState()
+      ])

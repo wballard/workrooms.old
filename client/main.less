@@ -51,6 +51,8 @@
 
 .video-avatars {
   overflow: hidden;
+  margin-left: 60px;
+  margin-right: 60px;
   ul {
     clear:left;
     float:left;
@@ -76,7 +78,45 @@
   height: 100%
 }
 
+.tools {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  padding: 0;
+  .tool {
+    display: inline-block;
+    padding: 0;
+    margin-bottom: 0; // For input.btn
+    font-size: @font-size-base;
+    font-weight: 500;
+    line-height: @line-height-base;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    color: @btn-default-bg;
+    &:hover {
+      color: darken(@btn-default-bg, 10%);
+    }
+  }
+}
+
+.overlay {
+  text-shadow: 0 2px 0 @body-bg, 0 -2px 0 @body-bg;
+  -webkit-transform: rotate(10deg);
+  -moz-transform: rotate(10deg);
+  -ms-transform: rotate(10deg);
+  -o-transform: rotate(10deg);
+  transform: rotate(10deg);
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
+  &:before {
+    content: "/"
+  }
+}
+
 html, body {
   height: 100%;
+  background: @body-bg;
 }
 
