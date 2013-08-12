@@ -30,10 +30,8 @@ hidden/enabled based on detecting speaking.
 Speaking events are handled here, as well as sent up the scope chain.
 
           $scope.$on 'start.speaking', ->
-            console.log 'start'
             $highlight.show()
           $scope.$on 'stop.speaking', ->
-            console.log 'stop'
             $highlight.hide()
 
 
@@ -55,9 +53,24 @@ This whole idea is borrowed from [hark](https://npmjs.org/package/hark).
               fftBins = new Float32Array(audioAnalyser.fftSize)
               audioSource = audioContext.createMediaStreamSource(stream)
               audioSource.connect(audioAnalyser)
+
+Shim in an output stream with gain control. Can you hear me now?
+
+              audioDestination = audioContext.createMediaStreamDestination()
+              gainFilter = audioContext.createGain()
+              audioSource.connect(gainFilter)
+              gainFilter.connect(audioDestination)
+              stream.removeTrack(stream.getAudioTracks()[0])
+              stream.addTrack(audioDestination.stream.getAudioTracks()[0])
+
+These are ex-recto.
+
               interval = 100
               maxThreshold = -65
               meanThreshold = -97
+
+Start up the monitoring loop.
+
               poller = () ->
                 if element[0].src
                   setTimeout ->
@@ -67,9 +80,11 @@ This whole idea is borrowed from [hark](https://npmjs.org/package/hark).
                     meanVolume = _.reduce(valid, (sum, x) -> sum + x) / valid.length
                     if maxVolume > maxThreshold and meanVolume > meanThreshold
                       $scope.$emit('start.speaking') if not speaking
+                      gainFilter.gain.value = 1.0 if gainFilter
                       speaking = true
                     else
                       $scope.$emit('stop.speaking') if speaking
+                      gainFilter.gain.value = 0.2 if gainFilter
                       speaking = false
                     poller()
                   , interval
