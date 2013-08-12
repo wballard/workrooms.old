@@ -42,6 +42,7 @@ sent to all attached peers.
 
         es.map( (object, callback) =>
           if object.addPeer
+            stream.emit 'connecting', options.client, object.addPeer
             otherClient = object.addPeer
             connection = peerConnections[otherClient] =
               new webrtc.PeerConnection(options.peerConfig, options.peerConstraints)
@@ -56,14 +57,15 @@ sent to all attached peers.
             )
             connection.data.onopen = ->
               connection.gate.resume()
-            connection.data.onclose = -> connection.dataSubstream.end()
+            connection.data.onclose = ->
+              connection.dataSubstream.end()
             connection.data.onmessage = (event) ->
               message = JSON.parse(event.data)
               message.emit = true
               stream.write message
             connection.onaddstream = (event) ->
               event.stream.client = otherClient
-              stream.write remotevideo: event.stream
+              stream.emit 'data',  remotevideo: event.stream
             connection.onicecandidate = (event) =>
               if event.candidate
                 stream.write
@@ -115,18 +117,18 @@ WebRTC negotiation messages for offer/answer/ice.
           else
             callback(null, message)
         ),
-        es.map( (message, callback) ->
+        es.mapSync( (message, callback) ->
           if message.ice and (connection = peerConnections[message.from])
             connection.addIceCandidate(new webrtc.IceCandidate(message.ice))
-            callback()
+            undefined
           else
-            callback(null, message)
+            message
         ),
 
 Topic based messages in the stream sent along to all connected peers over the
 peer connections
 
-        es.map( (object, callback) =>
+        es.map( (object, callback) ->
           if object.topic and not object.emit
             message = JSON.stringify(object)
             for otherClient, connection of peerConnections
@@ -134,8 +136,49 @@ peer connections
             callback()
           else
             callback(null, object)
+        ),
+
+Peer to peer heartbeats, peer connections will be cleaned out when failing
+to talk to one another.
+
+        es.map( (object, callback) ->
+          if object.ping
+            if connection = peerConnections[object.from]
+              connection.lastPingback = object.ping
+            callback()
+          else
+            callback(null, object)
         )
       )
+
+      HEARTBEAT_INTERVAL = 5000
+      FAIL_COUNT = 3
+
+      heartbeat = ->
+        setTimeout ->
+          message = JSON.stringify
+            ping: Date.now()
+            from: options.client
+          for otherClient, connection of peerConnections
+            connection.lastPing = Date.now()
+            connection.dataSubstream.write(message)
+            if connection.lastPingback and (connection.lastPingback + HEARTBEAT_INTERVAL * FAIL_COUNT) < connection.lastPing
+              stream.emit 'fail', options.client, otherClient
+              stream.write addPeer: otherClient
+          heartbeat()
+        , HEARTBEAT_INTERVAL
+      heartbeat()
+      stream.simulateFail = ->
+        for otherClient, connection of peerConnections
+          connection.lastPingback = 1
+
+This is interesting for testing, but will anyone every really close
+clean?
+
+      stream.on 'end', ->
+        console.log 'endy'
+        for otherClient, connection of peerConnections
+          connection.close()
 
 Start everything up with a local video connection. This opens up this data
 channel which itself is _streamy_.
@@ -145,7 +188,7 @@ channel which itself is _streamy_.
           stream.emit 'error', error
         else
           localVideoStream = video
-          stream.write localvideo: video
+          stream.emit 'data',  localvideo: video
           gate.resume()
 
       _.extend stream, options

@@ -20,8 +20,8 @@ self test controller, we'll see how it goes.
             clientA = variablesky.connect()
             clientB = variablesky.connect()
             roomName = Date.now()
-            clientARoom = room(clientA, roomName)
-            clientBRoom = room(clientB, roomName)
+            window.clientARoom = clientARoom = room(clientA, roomName)
+            window.clientBRoom = clientBRoom = room(clientB, roomName)
             #using angular q, note the $apply
             ajoin = $q.defer()
             bjoin = $q.defer()
@@ -35,17 +35,24 @@ self test controller, we'll see how it goes.
                 $scope.$apply()
             avideo = $q.defer()
             bvideo = $q.defer()
-            clientARoom.on 'localvideo', ->
+            clientARoom.on 'localvideo', (stream) ->
               avideo.resolve()
+              attachMediaStream stream, document.getElementById('peerA'), {autoplay: true, muted: true}
               $scope.$apply()
-            clientBRoom.on 'localvideo', ->
+            clientARoom.on 'remotevideo', (streams) ->
+              attachMediaStream streams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
+            clientBRoom.on 'localvideo', (stream) ->
               bvideo.resolve()
+              attachMediaStream stream, document.getElementById('peerB'), {autoplay: true, muted: true}
               $scope.$apply()
+            clientBRoom.on 'remotevideo', (streams) ->
+              attachMediaStream streams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
             $q.all([ajoin.promise, bjoin.promise, avideo.promise, bvideo.promise]).then -> done()
 
           after (done) ->
-            clientA.close ->
-              clientB.close done
+            #going to leave the client connections open on purpose
+            #so I can manually poke and simulate connection failure
+            done()
 
           it "lets you set up peer-peer data channels", (done) ->
             pa = $q.defer()
@@ -69,13 +76,6 @@ self test controller, we'll see how it goes.
             clientBRoom.write
               topic: 'topic'
               message: 'B'
-
-          it 'shows videos from the local side of peer connections', (done) ->
-            attachMediaStream clientARoom.localVideoStream, document.getElementById('peerA'), {autoplay: true, muted: true}
-            attachMediaStream clientBRoom.localVideoStream, document.getElementById('peerB'), {autoplay: true, muted: true}
-            attachMediaStream clientARoom.remoteVideoStreams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
-            attachMediaStream clientBRoom.remoteVideoStreams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
-            done()
 
         mocha.run()
       ])
