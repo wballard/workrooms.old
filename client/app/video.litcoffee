@@ -58,12 +58,13 @@ This whole idea is borrowed from [hark](https://npmjs.org/package/hark).
 
 Shim in an output stream with gain control. Can you hear me now?
 
-              audioDestination = audioContext.createMediaStreamDestination()
-              gainFilter = audioContext.createGain()
-              audioSource.connect(gainFilter)
-              gainFilter.connect(audioDestination)
-              stream.removeTrack(stream.getAudioTracks()[0])
-              stream.addTrack(audioDestination.stream.getAudioTracks()[0])
+              if attrs.autoGain
+                audioDestination = audioContext.createMediaStreamDestination()
+                gainFilter = audioContext.createGain()
+                audioSource.connect(gainFilter)
+                gainFilter.connect(audioDestination)
+                stream.removeTrack(stream.getAudioTracks()[0])
+                stream.addTrack(audioDestination.stream.getAudioTracks()[0])
 
 These are ex-recto.
 
@@ -80,6 +81,7 @@ Start up the monitoring loop.
                     valid = _.select(fftBins, (x) -> x < 0)
                     maxVolume = _.max(valid)
                     meanVolume = _.reduce(valid, (sum, x) -> sum + x) / valid.length
+                    console.log maxVolume, meanVolume
                     if maxVolume > maxThreshold
                       $scope.$emit('start.speaking') if not speaking
                       gainFilter.gain.value = 1.0 if gainFilter
