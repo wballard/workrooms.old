@@ -90,6 +90,14 @@ Start up the monitoring loop.
                   , interval
               poller()
 
+Visual feedback.
+
+              $scope.$watch "#{attrs.attachStream}.muteVideo", (muted) ->
+                console.log 'watchy', arguments
+                if muted
+                  element.addClass 'muteVideo'
+                else
+                  element.removeClass 'muteVideo'
 
 And an unhook.
 
@@ -98,7 +106,8 @@ And an unhook.
       ])
       .directive('muteAudioStream', [ ->
         restrict: 'A'
-        link: ($scope, element, attrs) ->
+        require: 'ngModel'
+        link: ($scope, element, attrs, ngModel) ->
           template = """
             <span class="icon-stack">
               <i class="icon-microphone"></i>
@@ -117,6 +126,8 @@ And an unhook.
             if monitoringStream
               _.each monitoringStream.getAudioTracks(), (x) ->
                 x.enabled = $off.is(':visible')
+              $scope.$apply ->
+                ngModel.$setViewValue not $off.is(':visible')
               showState()
           $scope.$watch attrs.muteAudioStream, (stream) ->
             monitoringStream = stream
@@ -124,7 +135,8 @@ And an unhook.
       ])
       .directive('muteVideoStream', [ ->
         restrict: 'A'
-        link: ($scope, element, attrs) ->
+        require: 'ngModel'
+        link: ($scope, element, attrs, ngModel) ->
           template = """
             <span class="icon-stack">
               <i class="icon-facetime-video"></i>
@@ -143,6 +155,8 @@ And an unhook.
             if monitoringStream
               _.each monitoringStream.getVideoTracks(), (x) ->
                 x.enabled = $off.is(':visible')
+              $scope.$apply ->
+                ngModel.$setViewValue not $off.is(':visible')
               showState()
           $scope.$watch attrs.muteVideoStream, (stream) ->
             monitoringStream = stream

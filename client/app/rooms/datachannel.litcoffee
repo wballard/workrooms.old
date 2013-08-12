@@ -34,7 +34,6 @@ fascination with substack's code.
 
       stream = es.pipeline(
         gate = es.pause().pause(),
-        #tap(0),
 
 Adding a peer, this sets up a peer connection with an associated data stream
 that is used to relay messages peer to peer in a streamy fashion. The net effect

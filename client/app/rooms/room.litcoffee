@@ -47,13 +47,14 @@ Data channel for peer-peer communication.
       emit = ->
         dataChannel.emit.apply dataChannel, arguments
       remoteVideoStreams = {}
+      localVideoStream = {}
 
 The room itself is a stream pipeline of command handling.
 
       roomStream = es.pipeline(
-        es.mapSync( (data) =>
+        es.mapSync( (data) ->
           if data.localvideo
-            dataChannel.localVideoStream = data.localvideo
+            dataChannel.localVideoStream = localVideoStream = data.localvideo
             #hack for testing visually
             if HACK
               remoteVideoStreams[data.localvideo.client] = data.localvideo
@@ -63,15 +64,23 @@ The room itself is a stream pipeline of command handling.
           else
             data
         ),
-        es.mapSync( (data) =>
+        es.mapSync( (data) ->
           if data.remotevideo
             remoteVideoStreams[data.remotevideo.client] = data.remotevideo
+            synchMetadata()
             dataChannel.remoteVideoStreams = remoteVideoStreams
             emit 'remotevideo', remoteVideoStreams
           else
             data
         ),
-        es.mapSync( (data) =>
+        es.mapSync( (data) ->
+          if data is dataChannel.localState
+            clientLink.save data
+            undefined
+          else
+            data
+        ),
+        es.mapSync( (data) ->
           if data.emit
             emit data.topic, data.message
             undefined
@@ -90,7 +99,9 @@ All connected, data in the channel is processed by this room.
       dataChannel.pipe(roomStream)
 
 Variable sky signalling channel forwards to the data channel for processing.
-This is the WebRTC _signaling server_ bit.
+This is the WebRTC _signaling server_ bit. This is peer-peer over a streaming
+message channel, not reflected in a VariableSky variable, as there is no point
+in all clients seeing it.
 
       skyclient.on 'signaling', (message) ->
         dataChannel.write(message)
@@ -101,27 +112,42 @@ messages, which at the bare minimum are useful for testing.
 
       clients = {}
       path = "__rooms__.#{name}"
+      roomData = {}
       roomLink = skyclient.link path, (error, snapshot) =>
+        roomData = snapshot
         for client, ignore of snapshot?.clients
           if not clients[client] and client isnt options.client
-            console.log 'joining'
             clients[client] = true
             dataChannel.write addPeer: client
             emit 'join', client
         for client, ignore of clients
           if not snapshot[client]
             emit 'leave', client
+        synchMetadata()
+
+Metadata, moved on to the video streams themselves. A bit easier to use with
+Angular like this.
+
+      synchMetadata =  ->
+        allStreams = {}
+        if localVideoStream
+          allStreams[options.client] = localVideoStream
+        allStreams = _.extend(allStreams, remoteVideoStreams)
+        console.log roomData, allStreams
+        for client, metadata of roomData?.clients
+          if stream = allStreams[client]
+            stream.muteAudio = metadata.muteAudio or false
+            stream.muteVideo = metadata.muteVideo or false
+        emit 'synch'
 
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.
 
-      clientLink = skyclient.link "#{path}.clients.#{options.client}"
+      dataChannel.clientLinkPath = "#{path}.clients.#{options.client}"
+      clientLink = skyclient.link dataChannel.clientLinkPath
 
-      if clientLink.val
-        clientLink.val.joined = true
-        clientLink.save clientLink.val
-      else
-        clientLink.save joined: true
+      clientLink.save
+        joined: Date.now()
 
 And that's it, we are all set up.
 

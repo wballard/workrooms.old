@@ -5,6 +5,12 @@
 @video-size: 96px;
 @video-indent: -12px;
 
+.test-videos {
+  video {
+    width: @video-size;
+    height: @video-size;
+  }
+}
 
 .video-avatar {
   width: @video-size;
@@ -51,8 +57,6 @@
 
 .video-avatars {
   overflow: hidden;
-  margin-left: 60px;
-  margin-right: 60px;
   ul {
     clear:left;
     float:left;
@@ -113,6 +117,10 @@
   &:before {
     content: "/"
   }
+}
+
+.muteVideo {
+  -webkit-filter: grayscale(1.0) blur(0.25px);
 }
 
 html, body {
