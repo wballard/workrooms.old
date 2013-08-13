@@ -2,6 +2,7 @@ Deal with video streams.
 
     attachMediaStream = require('attachmediastream')
     _ = require('lodash')
+    audioContext = new webkitAudioContext()
 
 This is the really simple case of just hooking a stream on to an
 `<video>` element.
@@ -40,14 +41,13 @@ Speaking events are handled here, as well as sent up the scope chain.
 Hook to the video element and start things up.
 
           $scope.$watch attrs.attachStream, (stream) ->
-            if stream
+            if stream?.live
               attachMediaStream(stream, element[0])
 
 Audio transform, fires off 'start.speaking' and 'stop.speaking'. This is the
 basis of activity detection and automatic gain control to help combat feedback.
 This whole idea is borrowed from [hark](https://npmjs.org/package/hark).
 
-              audioContext = new webkitAudioContext()
               #rock the UK spelling
               audioAnalyser = audioContext.createAnalyser()
               audioAnalyser.fftSize = 512
@@ -123,7 +123,7 @@ And an unhook.
           $off = $(element).append(template).find('.overlay')
           monitoringStream = null
           showState = ->
-            if monitoringStream
+            if monitoringStream?.getAudioTracks
               if _.any(monitoringStream.getAudioTracks(), (x) -> x.enabled)
                 $off.hide()
               else
@@ -152,7 +152,7 @@ And an unhook.
           $off = $(element).append(template).find('.overlay')
           monitoringStream = null
           showState = ->
-            if monitoringStream
+            if monitoringStream?.getVideoTracks
               if _.any(monitoringStream.getVideoTracks(), (x) -> x.enabled)
                 $off.hide()
               else

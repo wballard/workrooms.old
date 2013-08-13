@@ -63,10 +63,14 @@ sent to all attached peers.
               message = JSON.parse(event.data)
               message.emit = true
               stream.write message
-            #lots of callbacks on rtc peers, turns out only two are really useful...
+            #lots of callbacks on rtc peers
+            connection.onnegotiationneeded = ->
+              null
             connection.onaddstream = (event) ->
               event.stream.client = otherClient
               stream.emit 'data',  remotevideo: event.stream
+            connection.onremovestream = (event) ->
+              null
             connection.onicecandidate = (event) =>
               if event.candidate
                 stream.write
@@ -177,7 +181,6 @@ This is interesting for testing, but will anyone every really close
 clean?
 
       stream.on 'end', ->
-        console.log 'endy'
         for otherClient, connection of peerConnections
           connection.close()
 

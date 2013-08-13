@@ -1,14 +1,14 @@
 <div ng-controller="Room">
   <div class="tools">
-    <button type="button" mute-audio-stream="room.localVideoStream" ng-model="me.muteAudio" class="tool"></button>
-    <button type="button" mute-video-stream="room.localVideoStream" ng-model="me.muteVideo" class="tool"></button>
+    <button type="button" mute-audio-stream="localVideo" ng-model="me.muteAudio" class="tool"></button>
+    <button type="button" mute-video-stream="localVideo" ng-model="me.muteVideo" class="tool"></button>
   </div>
   <div class="video-avatars">
     <ul>
       <li class="video-avatar">
-      <video class="" preload="none" muted attach-stream="room.localVideoStream"></video>
+      <video class="" preload="none" muted attach-stream="localVideo"></video>
       </li>
-      <li ng-repeat="(client, videoStream) in room.remoteVideoStreams" class="video-avatar">
+      <li ng-repeat="(client, videoStream) in remoteVideo" class="video-avatar">
       <video class="" preload="none" attach-stream="videoStream"></video>
       </li>
     </ul>

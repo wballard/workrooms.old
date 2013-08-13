@@ -54,22 +54,23 @@ The room itself is a stream pipeline of command handling.
       roomStream = es.pipeline(
         es.mapSync( (data) ->
           if data.localvideo
-            dataChannel.localVideoStream = localVideoStream = data.localvideo
+            localVideoStream = data.localvideo
+            localVideoStream.live = true
             #hack for testing visually
             if HACK
               remoteVideoStreams[data.localvideo.client] = data.localvideo
-              dataChannel.remoteVideoStreams = remoteVideoStreams
             #end hack
             emit 'localvideo', data.localvideo
+            synchMetadata()
           else
             data
         ),
         es.mapSync( (data) ->
           if data.remotevideo
             remoteVideoStreams[data.remotevideo.client] = data.remotevideo
-            synchMetadata()
-            dataChannel.remoteVideoStreams = remoteVideoStreams
+            data.remotevideo.live = true
             emit 'remotevideo', remoteVideoStreams
+            synchMetadata()
           else
             data
         ),
@@ -120,10 +121,6 @@ messages, which at the bare minimum are useful for testing.
             clients[client] = true
             dataChannel.write addPeer: client
             emit 'join', client
-        for client, ignore of clients
-          if not snapshot[client]
-            delete remoteVideoStreams[client]
-            emit 'leave', client
         synchMetadata()
 
 Metadata, moved on to the video streams themselves. A bit easier to use with
@@ -138,7 +135,9 @@ Angular like this, allowing the video stream itself to be put into scopes.
           if stream = allStreams[client]
             stream.muteAudio = metadata.muteAudio or false
             stream.muteVideo = metadata.muteVideo or false
-        emit 'synch'
+          else
+            remoteVideoStreams[client] = {}
+        emit 'synch', localVideoStream, remoteVideoStreams
 
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.

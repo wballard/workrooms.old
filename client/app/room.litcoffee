@@ -6,15 +6,11 @@ Control a single Room, including video and chat, running peer to peer.
       .module('workrooms')
       .controller('Room', ['$scope', '$routeParams', ($scope, $routeParams) ->
         $scope.room = room($scope.sky, $routeParams.roomid)
-          .on('localvideo', ->
-            $scope.$apply())
-          .on('remotevideo', ->
-            $scope.$apply())
-          .on('localState', ->
-            $scope.$apply())
-          .on('synch', ->
-            $scope.$apply())
+        $scope.room.on 'localState', ->
+            $scope.$apply()
+        $scope.room.on 'synch', (localVideo, remoteVideo) ->
+            $scope.$apply ->
+              $scope.localVideo = localVideo
+              $scope.remoteVideo = remoteVideo
         $scope.sky.linkToAngular $scope.room.clientLinkPath, $scope, 'me'
-        $scope.$on 'start.speaking', ->
-          console.log 'hiii'
       ])
