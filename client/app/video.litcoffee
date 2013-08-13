@@ -37,7 +37,6 @@ Speaking events are handled here, as well as sent up the scope chain.
           $scope.$on 'stop.speaking', ->
             $highlight.hide()
 
-
 Hook to the video element and start things up.
 
           $scope.$watch attrs.attachStream, (stream) ->
@@ -69,7 +68,7 @@ Shim in an output stream with gain control. Can you hear me now?
 These are ex-recto.
 
               interval = 100
-              meanThreshold = 18
+              meanThreshold = 15
 
 Start up the monitoring loop.
 
@@ -96,9 +95,9 @@ Visual feedback.
 
               $scope.$watch "#{attrs.attachStream}.muteVideo", (muted) ->
                 if muted
-                  element.addClass 'muteVideo'
+                  element.hide()
                 else
-                  element.removeClass 'muteVideo'
+                  element.show()
               $scope.$watch "#{attrs.attachStream}.muteAudio", (muted) ->
                 if muted
                   $muted.show()
