@@ -6,7 +6,7 @@
   <div class="video-avatars">
     <ul>
       <li class="video-avatar">
-      <video class="" preload="none" muted attach-stream="localVideo"></video>
+      <video class="" preload="none" muted auto-gain="true" attach-stream="localVideo"></video>
       </li>
       <li ng-repeat="(client, videoStream) in remoteVideo" class="video-avatar">
       <video class="" preload="none" attach-stream="videoStream"></video>
