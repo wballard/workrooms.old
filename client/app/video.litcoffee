@@ -79,7 +79,7 @@ Start up the monitoring loop.
                     valid = _.select(fftBins, (x) -> x < 0)
                     maxVolume = _.max(valid)
                     meanVolume = _.reduce(valid, (sum, x) -> sum + x) / fftBins.length
-                    if Math.abs(maxVolume - meanVolume) < meanThreshold
+                    if (Math.abs(maxVolume - meanVolume) < meanThreshold) and not stream.muteAudio
                       $scope.$emit('start.speaking') if not speaking
                       gainFilter.gain.value = 1.0 if gainFilter
                       speaking = true
