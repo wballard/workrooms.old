@@ -135,6 +135,8 @@ Angular like this, allowing the video stream itself to be put into scopes.
           if stream = allStreams[client]
             stream.muteAudio = metadata.muteAudio or false
             stream.muteVideo = metadata.muteVideo or false
+            stream.width = options.mediaConstraints.video.mandatory.maxWidth
+            stream.height = options.mediaConstraints.video.mandatory.maxHeight
           else
             remoteVideoStreams[client] = {}
         emit 'synch', localVideoStream, remoteVideoStreams

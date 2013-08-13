@@ -25,8 +25,11 @@ hidden/enabled based on detecting speaking.
             .before("<div class='highlight'></div>")
             .before("<div class='muted'></div>")
             .before("<div class='user-icon'></div>")
+            .before("<canvas class='snapshot'></canvas>")
           $highlight = $(element).parent().find('.highlight')
           $muted = $(element).parent().find('.muted')
+          $snapshot = $(element).parent().find('.snapshot')
+          $video = $(element)
 
           $highlight.hide()
 
@@ -58,6 +61,7 @@ This whole idea is borrowed from [hark](https://npmjs.org/package/hark).
 Shim in an output stream with gain control. Can you hear me now?
 
               if attrs.autoGain
+                console.log 'autogain'
                 audioDestination = audioContext.createMediaStreamDestination()
                 gainFilter = audioContext.createGain()
                 audioSource.connect(gainFilter)
@@ -65,14 +69,11 @@ Shim in an output stream with gain control. Can you hear me now?
                 stream.removeTrack(stream.getAudioTracks()[0])
                 stream.addTrack(audioDestination.stream.getAudioTracks()[0])
 
-These are ex-recto.
+Start up the audio monitoring loop. Ex-recto thresholds.
 
               interval = 100
               meanThreshold = 15
-
-Start up the monitoring loop.
-
-              poller = () ->
+              poller = ->
                 if element[0].src
                   setTimeout ->
                     audioAnalyser.getFloatFrequencyData(fftBins)
@@ -90,6 +91,17 @@ Start up the monitoring loop.
                     poller()
                   , interval
               poller()
+
+Video monitoring loop. At the moment, this is just to get a snapshot thumbnail.
+
+              videoInterval = 5000
+              videoPoller = ->
+                $snapshot.width($video.width()).height($video.height())
+                if _.any(stream.getVideoTracks(), (x) -> x.enabled) and not stream.muteVideo
+                  $snapshot[0].getContext('2d').drawImage($video[0], 0, 0, stream.width, $snapshot.height())
+                setTimeout videoPoller, videoInterval
+              videoPoller()
+
 
 Visual feedback.
 

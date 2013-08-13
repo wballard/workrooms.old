@@ -3,6 +3,7 @@
 @import 'lib/mocha.css';
 
 @video-size: 196px;
+@video-size-aspect: 147px;
 @video-indent: -12px;
 
 .test-videos {
@@ -12,24 +13,50 @@
   }
 }
 
+.video-size {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: @video-size;
+  height: @video-size-aspect;
+}
+
 .video-avatar {
   width: @video-size;
-  height: @video-size;
-  video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: @video-size;
-    height: @video-size;
+  height: @video-size-aspect;
+  .background {
+    .video-size;
+    background-image: url('images/avatar-edge.svg');
+    z-index: 1;
+  }
+  .user-icon {
+    .icon-FontAwesome();
+    font-size: @video-size/2;
+    line-height: @video-size-aspect;
+    .video-size;
+    &:before {
+      content: @user;
+      color: @gray-light;
+    }
+    z-index: 2;
+  }
+  .snapshot {
+    .video-size;
     -webkit-mask-image: url('images/avatar-mask.svg');
-    z-index: 10;
+    -webkit-filter: grayscale(1.0) blur(0.25px);
+    z-index: 3;
+  }
+  video {
+    .video-size;
+    //this forces the main size of the container to the video aspect ratio
+    position: relative;
+    -webkit-mask-image: url('images/avatar-mask.svg');
+    z-index: 4;
   }
   .highlight {
-    position: absolute;
-    width: @video-size;
-    height: @video-size;
+    .video-size;
     background-image: url('images/avatar-highlight.svg');
-    z-index: 12;
+    z-index: 5;
   }
   .muted {
     .icon-FontAwesome();
@@ -41,29 +68,6 @@
     &:before {
       color: @gray-light;
       content: @microphone-off;
-    }
-  }
-  .background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: @video-size;
-    height: @video-size;
-    background-image: url('images/avatar-edge.svg');
-  }
-  .user-icon {
-    .icon-FontAwesome();
-    font-size: @video-size/2;
-    line-height: @video-size;
-    position: relative;
-    top: 50%;
-    &:before {
-      position: relative;
-      margin-top: -25%;
-      line-height: normal;
-      display: block;
-      content: @user;
-      color: @gray-light;
     }
   }
   margin-left: @video-indent;
@@ -136,7 +140,6 @@
 }
 
 .muteVideo {
-  -webkit-filter: grayscale(1.0) blur(0.25px);
 }
 
 html, body {
