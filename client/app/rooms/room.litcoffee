@@ -75,6 +75,14 @@ The room itself is a stream pipeline of command handling.
             data
         ),
         es.mapSync( (data) ->
+          if data.removevideo
+            delete remoteVideoStreams[data.removevideo]
+            emit 'remotevideo', remoteVideoStreams
+            synchMetadata()
+          else
+            data
+        )
+        es.mapSync( (data) ->
           if data is dataChannel.localState
             clientLink.save data
             undefined
@@ -121,6 +129,11 @@ messages, which at the bare minimum are useful for testing.
             clients[client] = true
             dataChannel.write addPeer: client
             emit 'join', client
+        for client in _.keys(clients)
+          if not snapshot?.clients[client]
+            console.log client, 'has gone missing'
+            dataChannel.write removePeer: client
+            emit 'leave', client
         synchMetadata()
 
 Metadata, moved on to the video streams themselves. A bit easier to use with

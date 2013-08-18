@@ -12,5 +12,7 @@ Control a single Room, including video and chat, running peer to peer.
             $scope.$apply ->
               $scope.localVideo = localVideo
               $scope.remoteVideo = remoteVideo
-        $scope.sky.linkToAngular $scope.room.clientLinkPath, $scope, 'me'
+        $scope.sky
+          .linkToAngular($scope.room.clientLinkPath, $scope, 'me')
+          .autoRemove()
       ])

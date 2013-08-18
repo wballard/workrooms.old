@@ -70,7 +70,7 @@ sent to all attached peers.
               event.stream.client = otherClient
               stream.emit 'data',  remotevideo: event.stream
             connection.onremovestream = (event) ->
-              null
+              stream.emit 'data',  removevideo: otherClient
             connection.onicecandidate = (event) =>
               if event.candidate
                 stream.write
@@ -96,6 +96,16 @@ caller.
             callback()
           else
             callback(null, object)
+        ),
+
+Removing a peer, this is a disconnect.
+
+        es.map( (message, callback) ->
+          if message.removePeer and (connection = peerConnections[message.removePeer])
+            connection.close()
+            delete peerConnections[message.removePeer]
+
+          callback(null, message)
         ),
 
 WebRTC negotiation messages for offer/answer/ice.
