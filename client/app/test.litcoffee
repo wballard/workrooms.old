@@ -35,18 +35,16 @@ self test controller, we'll see how it goes.
                 $scope.$apply()
             avideo = $q.defer()
             bvideo = $q.defer()
-            clientARoom.on 'localvideo', (stream) ->
-              avideo.resolve()
-              attachMediaStream stream, document.getElementById('peerA'), {autoplay: true, muted: true}
-              $scope.$apply()
-            clientARoom.on 'remotevideo', (streams) ->
-              attachMediaStream streams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
-            clientBRoom.on 'localvideo', (stream) ->
-              bvideo.resolve()
-              attachMediaStream stream, document.getElementById('peerB'), {autoplay: true, muted: true}
-              $scope.$apply()
-            clientBRoom.on 'remotevideo', (streams) ->
-              attachMediaStream streams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
+            clientARoom.on 'synch', (streams) ->
+              if streams[clientARoom.client]
+                  attachMediaStream streams[clientARoom.client], document.getElementById('peerA'), {autoplay: true, muted: true}
+              if streams[clientBRoom.client]
+                  attachMediaStream streams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
+            clientBRoom.on 'synch', (streams) ->
+              if streams[clientARoom.client]
+                  attachMediaStream streams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
+              if streams[clientBRoom.client]
+                  attachMediaStream streams[clientBRoom.client], document.getElementById('peerB'), {autoplay: true, muted: true}
             $q.all([ajoin.promise, bjoin.promise, avideo.promise, bvideo.promise]).then -> done()
 
           after (done) ->

@@ -46,7 +46,6 @@ Data channel for peer-peer communication.
       dataChannel = datachannel(options)
       emit = ->
         dataChannel.emit.apply dataChannel, arguments
-      remoteVideoStreams = {}
       localVideoStream = {}
 
 The room itself is a stream pipeline of command handling.
@@ -56,32 +55,18 @@ The room itself is a stream pipeline of command handling.
           if data.localvideo
             localVideoStream = data.localvideo
             localVideoStream.live = true
-            #hack for testing visually
-            if HACK
-              remoteVideoStreams[data.localvideo.client] = data.localvideo
-            #end hack
             emit 'localvideo', data.localvideo
             synchMetadata()
           else
             data
         ),
         es.mapSync( (data) ->
-          if data.remotevideo
-            remoteVideoStreams[data.remotevideo.client] = data.remotevideo
-            data.remotevideo.live = true
-            emit 'remotevideo', remoteVideoStreams
-            synchMetadata()
+          if data.synch
+            synchMetadata(data.synch)
+            undefined
           else
             data
         ),
-        es.mapSync( (data) ->
-          if data.removevideo
-            delete remoteVideoStreams[data.removevideo]
-            emit 'remotevideo', remoteVideoStreams
-            synchMetadata()
-          else
-            data
-        )
         es.mapSync( (data) ->
           if data is dataChannel.localState
             clientLink.save data
@@ -123,15 +108,18 @@ messages, which at the bare minimum are useful for testing.
       path = "__rooms__.#{name}"
       roomData = {}
       roomLink = skyclient.link path, (error, snapshot) =>
+        emit 'client', skyclient.client
         roomData = snapshot
         for client, ignore of snapshot?.clients
           if not clients[client] and client isnt options.client
+            console.log client, 'hello'
             clients[client] = true
             dataChannel.write addPeer: client
             emit 'join', client
         for client in _.keys(clients)
           if not snapshot?.clients[client]
             console.log client, 'has gone missing'
+            delete clients[client]
             dataChannel.write removePeer: client
             emit 'leave', client
         synchMetadata()
@@ -139,9 +127,10 @@ messages, which at the bare minimum are useful for testing.
 Metadata, moved on to the video streams themselves. A bit easier to use with
 Angular like this, allowing the video stream itself to be put into scopes.
 
-      synchMetadata =  ->
+      synchMetadata = (remoteVideoStreams) ->
+        remoteVideoStreams = remoteVideoStreams or {}
         allStreams = {}
-        if localVideoStream
+        if localVideoStream.id
           allStreams[options.client] = localVideoStream
         allStreams = _.extend(allStreams, remoteVideoStreams)
         for client, metadata of roomData?.clients
@@ -150,9 +139,10 @@ Angular like this, allowing the video stream itself to be put into scopes.
             stream.muteVideo = metadata.muteVideo or false
             stream.width = options.mediaConstraints.video.mandatory.maxWidth
             stream.height = options.mediaConstraints.video.mandatory.maxHeight
+            stream.live = true
           else
             remoteVideoStreams[client] = {}
-        emit 'synch', localVideoStream, remoteVideoStreams
+        emit 'synch', allStreams
 
 Link to our own client in the sky room, this is to update our own state as a
 member in the room.

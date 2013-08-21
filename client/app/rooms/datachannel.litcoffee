@@ -21,6 +21,11 @@ only resume once the peer-peer connectivity is established, buffering messages
 until that time.
 
       peerConnections = {}
+      peerStreams = ->
+        ret = {}
+        for id, peer of peerConnections
+          ret[id] = peer.stream
+        ret
 
 Our local video stream. This is a shame really that you actually need to *have*
 the stream in order to start WebRTC negotiation, rather than just table about
@@ -67,10 +72,13 @@ sent to all attached peers.
             connection.onnegotiationneeded = ->
               null
             connection.onaddstream = (event) ->
+              console.log 'here is a stream'
               event.stream.client = otherClient
-              stream.emit 'data',  remotevideo: event.stream
+              connection.stream = event.stream
+              stream.emit 'data', synch: peerStreams()
             connection.onremovestream = (event) ->
-              stream.emit 'data',  removevideo: otherClient
+              connection.stream = undefined
+              stream.emit 'data', synch: peerStreams()
             connection.onicecandidate = (event) =>
               if event.candidate
                 stream.write
