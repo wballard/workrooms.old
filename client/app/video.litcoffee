@@ -92,21 +92,25 @@ Start up the audio monitoring loop. Ex-recto thresholds.
                   , interval
               poller()
 
+Snapshots. Hot.
+
+              snapshot = ->
+                $snapshot.width($video.width()).height($video.height())
+                $snapshot[0].getContext('2d').drawImage($video[0], 0, 0, stream.width, $snapshot.height())
+
 Video monitoring loop. At the moment, this is just to get a snapshot thumbnail.
 
               videoInterval = 5000
               videoPoller = ->
-                $snapshot.width($video.width()).height($video.height())
-                if _.any(stream.getVideoTracks(), (x) -> x.enabled) and not stream.muteVideo
-                  $snapshot[0].getContext('2d').drawImage($video[0], 0, 0, stream.width, $snapshot.height())
+                snapshot() unless stream.muteVideo
                 setTimeout videoPoller, videoInterval
               videoPoller()
-
 
 Visual feedback.
 
               $scope.$watch "#{attrs.attachStream}.muteVideo", (muted) ->
                 if muted
+                  snapshot()
                   element.hide()
                 else
                   element.show()
