@@ -1,6 +1,9 @@
 This sets up peer to peer data channels, forming a logical NxN matrix of
 connections between all peers.
 
+This is itself a stream, so it makes all the peer data channels feel like
+one multiplexed channel.
+
 In comparison to a central hub, reaching all clients is simply N - 1 messages,
 whereas with a central hub, there are N messages as the client must send to
 the central server before it relays to all clients. This has the effect of
@@ -159,44 +162,11 @@ peer connections
             callback()
           else
             callback(null, object)
-        ),
-
-Peer to peer heartbeats, peer connections will be cleaned out when failing
-to talk to one another.
-
-        es.map( (object, callback) ->
-          if object.ping
-            if connection = peerConnections[object.from]
-              connection.lastPingback = object.ping
-            callback()
-          else
-            callback(null, object)
         )
       )
 
-      HEARTBEAT_INTERVAL = 5000
-      FAIL_COUNT = 3
-
-      heartbeat = ->
-        setTimeout ->
-          message = JSON.stringify
-            ping: Date.now()
-            from: options.client
-          for otherClient, connection of peerConnections
-            connection.lastPing = Date.now()
-            connection.dataSubstream.write(message)
-            if connection.lastPingback and (connection.lastPingback + HEARTBEAT_INTERVAL * FAIL_COUNT) < connection.lastPing
-              stream.emit 'fail', options.client, otherClient
-              stream.write addPeer: otherClient
-          heartbeat()
-        , HEARTBEAT_INTERVAL
-      heartbeat()
-      stream.simulateFail = ->
-        for otherClient, connection of peerConnections
-          connection.lastPingback = 1
-
-This is interesting for testing, but will anyone every really close
-clean?
+End stream, unhook all all the peer to peer streams. This really needs to be
+done, so in the upstream angular code this stream is ended `.$on('$destroy')`.
 
       stream.on 'end', ->
         console.log 'ending'
@@ -215,6 +185,8 @@ channel which itself is _streamy_.
           localVideoStream = video
           stream.emit 'data',  localvideo: video
           gate.resume()
+
+Return, all done, this is the stream.
 
       _.extend stream, options
 

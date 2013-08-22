@@ -40,11 +40,15 @@ self test controller, we'll see how it goes.
                   attachMediaStream streams[clientARoom.client], document.getElementById('peerA'), {autoplay: true, muted: true}
               if streams[clientBRoom.client]
                   attachMediaStream streams[clientBRoom.client], document.getElementById('peerARemote'), {autoplay: true, muted: true}
+              avideo.resolve()
+              $scope.$apply()
             clientBRoom.on 'synch', (streams) ->
               if streams[clientARoom.client]
                   attachMediaStream streams[clientARoom.client], document.getElementById('peerBRemote'), {autoplay: true, muted: true}
               if streams[clientBRoom.client]
                   attachMediaStream streams[clientBRoom.client], document.getElementById('peerB'), {autoplay: true, muted: true}
+              bvideo.resolve()
+              $scope.$apply()
             $q.all([ajoin.promise, bjoin.promise, avideo.promise, bvideo.promise]).then -> done()
 
           after (done) ->
