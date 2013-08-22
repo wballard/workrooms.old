@@ -12,12 +12,14 @@ Control a single Room, including video and chat, running peer to peer.
             $scope.$apply ->
               $scope.client = client
         $scope.room.on 'synch', (allVideos) ->
-            console.log 'synch!'
+            console.log 'synch!', allVideos
             $scope.$apply ->
               $scope.localVideo = allVideos[$scope.client]
               delete allVideos[$scope.client]
-              $scope.removeVideos = allVideos
+              $scope.remoteVideos = allVideos
         $scope.sky
           .linkToAngular($scope.room.clientLinkPath, $scope, 'me')
           .autoRemove()
+        $scope.$on '$destroy', ->
+          $scope.room.end()
       ])

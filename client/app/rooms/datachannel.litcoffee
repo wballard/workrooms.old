@@ -199,8 +199,11 @@ This is interesting for testing, but will anyone every really close
 clean?
 
       stream.on 'end', ->
+        console.log 'ending'
         for otherClient, connection of peerConnections
+          console.log 'ending', otherClient
           connection.close()
+        console.log 'ended'
 
 Start everything up with a local video connection. This opens up this data
 channel which itself is _streamy_.
